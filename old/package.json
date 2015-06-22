@@ -4,16 +4,12 @@
   "description": "",
   "author": "",
   "devDependencies": {
-    "del": "latest",
     "gulp": "^3.8.11",
-    "gulp-concat": "latest",
     "gulp-debug": "^2.0.1",
     "gulp-inject": "^1.2.0",
-    "gulp-ng-annotate": "^1.0.0",
     "gulp-sourcemaps": "^1.5.1",
     "gulp-tslint": "^1.4.4",
-    "gulp-typescript": "latest",
-    "gulp-util": "latest",
-    "merge2": "latest"
+    "gulp-typescript": "^2.5.0",
+    "del": "latest"
   }
 }

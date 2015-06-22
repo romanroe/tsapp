@@ -3,17 +3,18 @@ var GulpConfig = (function () {
     function GulpConfig() {
 
         this.source = './src/';
-        this.allJavaScript = this.source + '/**/*.js';
+        //this.allJavaScript = [this.source + '/js/**/*.js'];
         this.allTypeScript = this.source + '/**/*.ts';
-        this.allSourceFiles = this.source + '/**/*';
 
 
         this.typings = './typings/';
         this.libraryTypeScriptDefinitions = './typings/**/*.ts';
+        this.appTypeScriptReferences = this.typings + 'typescriptApp.d.ts';
+
 
         this.build = './build/';
-        this.outputPathJs = this.build + '/js';
-        this.tsOutputPathDts = this.build + '/dts';
+        this.tsOutputPath = this.build + '/js';
+
     }
 
     return GulpConfig;
