@@ -3,94 +3,29 @@
 var gulp = require('gulp');
 //var debug = require('gulp-debug');
 //var inject = require('gulp-inject');
+var watch = require('gulp-watch');
 var ts = require('gulp-typescript');
 //var tslint = require('gulp-tslint');
 var sourcemaps = require('gulp-sourcemaps');
 var del = require('del');
 var merge = require('merge2');
 var Config = require('./gulpfile.config');
-//var gutil = require('gulp-util');
+//var htmlmin = require('gulp-htmlmin');
 var concat = require('gulp-concat');
 var ngAnnotate = require('gulp-ng-annotate');
+var watchify = require('watchify');
+var browserify = require('browserify');
+var uglify = require('gulp-uglify');
+var source = require('vinyl-source-stream');
+var buffer = require('vinyl-buffer');
+var gutil = require('gulp-util');
+var assign = require('lodash.assign');
 
 var config = new Config();
 
-/**
- * Generates the app.d.ts references file dynamically from all application *.ts files.
- */
-//gulp.task('gen-ts-refs', function () {
-//    var target = gulp.src(config.appTypeScriptReferences);
-//    var sources = gulp.src([config.allTypeScript], {read: false});
-//    return target.pipe(inject(sources, {
-//        starttag: '//{',
-//        endtag: '//}',
-//        transform: function (filepath) {
-//            return '/// <reference path="../..' + filepath + '" />';
-//        }
-//    })).pipe(gulp.dest(config.typings));
-//});
-
-/**
- * Lint all custom TypeScript files.
- */
 //gulp.task('ts-lint', function () {
 //    return gulp.src(config.allTypeScript).pipe(tslint()).pipe(tslint.report('prose'));
 //});
-
-/**
- * Compile TypeScript and include references to library and app .d.ts files.
- */
-//gulp.task('compile-ts', function () {
-//    var sourceTsFiles = [
-//        config.allTypeScript,                       // path to typescript files
-//        config.libraryTypeScriptDefinitions,        // reference to library .d.ts files
-//        config.appTypeScriptReferences              // reference to app.d.ts files
-//    ];
-//
-//    var tsResult = gulp.src(sourceTsFiles)
-//        .pipe(sourcemaps.init())
-//        .pipe(tsc({
-//            target: 'ES5',
-//            declarationFiles: false,
-//            noExternalResolve: true
-//        }));
-//
-//    tsResult.dts.pipe(gulp.dest(config.tsOutputPath));
-//    return tsResult.js
-//        .pipe(sourcemaps.write('.'))
-//        .pipe(gulp.dest(config.tsOutputPath));
-//});
-
-/**
- * Remove all generated JavaScript files from TypeScript compilation.
- */
-//gulp.task('clean-ts', function (cb) {
-//    var typeScriptGenFiles = [config.tsOutputPath,            // path to generated JS files
-//        config.sourceApp + '**/*.js',    // path to all JS files auto gen'd by editor
-//        config.sourceApp + '**/*.js.map' // path to all sourcemap files auto gen'd by editor
-//    ];
-//
-//     delete the files
-//del(typeScriptGenFiles, cb);
-//});
-
-//gulp.task('watch', function () {
-//    gulp.watch([config.allTypeScript], ['ts-lint', 'compile-ts', 'gen-ts-refs']);
-//});
-//
-//gulp.task('default', ['ts-lint', 'compile-ts', 'gen-ts-refs', 'watch']);
-
-
-// ------------------------------------------------------------------
-// TypeScript project
-// ------------------------------------------------------------------
-var tsProject = ts.createProject({
-    target: 'ES5',
-    declarationFiles: true,
-    noExternalResolve: true,
-    sortOutput: false
-});
-
 
 // ------------------------------------------------------------------
 // clean
@@ -102,50 +37,62 @@ gulp.task('clean', function (cb) {
     del(typeScriptGenFiles, cb);
 });
 
+// ------------------------------------------------------------------
+// Browserify
+// ------------------------------------------------------------------
+
+var browserifyOpts = assign({}, watchify.args, {
+    entries: [],
+    debug: true
+});
+var browserifyBundle = watchify(
+    browserify(browserifyOpts)
+        .add("src/main.ts")
+        .plugin('tsify', config.tsSettings)
+);
+
+browserifyBundle.on('log', gutil.log);
+
+function browserifyWatch() {
+    return browserifyBundle.bundle()
+        .on('error', gutil.log.bind(gutil, 'Browserify Error'))
+        .pipe(source('bundle.js'))
+        .pipe(buffer())
+        .pipe(sourcemaps.init({loadMaps: true}))
+        .pipe(ngAnnotate())
+        .pipe(uglify())
+        .pipe(sourcemaps.write('./'))
+        .pipe(gulp.dest(config.build));
+}
 
 // ------------------------------------------------------------------
-// compile JavaScript
+// HTML
 // ------------------------------------------------------------------
-gulp.task('compile-js', function () {
-    var sourceJsFiles = [
-        config.allJavaScript
-    ];
 
-    var result = gulp
-        .src(sourceJsFiles)
-        .pipe(sourcemaps.init());
-        //.pipe(ngAnnotate());
-
-    return result;
+gulp.task('html', function () {
+    console.log("build html");
+    return gulp.src('src/*.html')
+        .pipe(gulp.dest(config.build));
 });
 
 // ------------------------------------------------------------------
-// compile TypeScript
+// Watch
 // ------------------------------------------------------------------
-gulp.task('compile-ts', function () {
-    var sourceTsFiles = [
-        config.allTypeScript,
-        config.libraryTypeScriptDefinitions
-    ];
 
-    var tsResult = gulp
-        .src(sourceTsFiles)
-        .pipe(sourcemaps.init())
-        .pipe(ts(tsProject, undefined, ts.reporter.longReporter()));
 
-    //return merge([
-    tsResult.dts
-        .pipe(gulp.dest(config.tsOutputPathDts));//,
+browserifyBundle.on('update', browserifyWatch);
 
-    return tsResult.js
-        .pipe(sourcemaps.write('.'))
-        .pipe(gulp.dest(config.outputPathJs));
-    //]);
+gulp.task('watchHTML', ['html'], function () {
+    return watch('src/*.html', ['html']);
 });
 
-
-gulp.task('watch', function () {
-    gulp.watch([config.allSourceFiles], ['compile-ts']);
+gulp.task('watchTS', function () {
+    return browserifyWatch();
 });
 
-gulp.task('default', ['compile-ts', 'watch']);
+// ------------------------------------------------------------------
+// Default
+// ------------------------------------------------------------------
+
+gulp.task('default', ['watchHTML, watchTS']);
+

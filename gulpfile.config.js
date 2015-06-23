@@ -5,15 +5,16 @@ var GulpConfig = (function () {
         this.source = './src/';
         this.allJavaScript = this.source + '/**/*.js';
         this.allTypeScript = this.source + '/**/*.ts';
-        this.allSourceFiles = this.source + '/**/*';
 
+        this.tsSettings = {
+            noImplicitAny: true
+        };
 
-        this.typings = './typings/';
-        this.libraryTypeScriptDefinitions = './typings/**/*.ts';
+        //this.typings = './typings/';
+        //this.libraryTypeScriptDefinitions = './typings/**/*.ts';
 
         this.build = './build/';
-        this.outputPathJs = this.build + '/js';
-        this.tsOutputPathDts = this.build + '/dts';
+        this.buildJs = this.build + '/js';
     }
 
     return GulpConfig;

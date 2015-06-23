@@ -14,6 +14,22 @@
     "gulp-tslint": "^1.4.4",
     "gulp-typescript": "latest",
     "gulp-util": "latest",
-    "merge2": "latest"
+    "gulp-watch": "latest",
+    "merge2": "latest",
+    "browserify": "latest",
+    "watchify": "latest",
+    "vinyl-source-stream": "latest",
+    "vinyl-buffer": "latest",
+    "lodash.assign": "latest",
+    "detective": "latest",
+    "json-stable-stringify": "latest",
+    "lexical-scope": "latest",
+    "combine-source-map": "latest",
+    "stream-splicer": "latest",
+    "tsify": "latest",
+    "gulp-uglify": "latest",
+    "gulp-htmlmin": "latest",
+    "gulp-streamify": "latest",
+    "stream-combiner2": "latest"
   }
 }

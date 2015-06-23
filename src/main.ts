@@ -1,5 +1,9 @@
+/// <reference path="../typings/angularjs/angular"/>
 
-var b = new cars.BMW("mein");
+import customer = require("./Customer");
 
+angular.module("app", [])
+    .service("myService", customer.MyService)
+    .controller("MyController", customer.MyController);
 
 
