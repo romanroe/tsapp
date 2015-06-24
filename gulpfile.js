@@ -10,7 +10,6 @@ var sourcemaps = require('gulp-sourcemaps');
 var del = require('del');
 var merge = require('merge2');
 var Config = require('./gulpfile.config');
-//var htmlmin = require('gulp-htmlmin');
 var concat = require('gulp-concat');
 var ngAnnotate = require('gulp-ng-annotate');
 var watchify = require('watchify');
@@ -20,6 +19,8 @@ var source = require('vinyl-source-stream');
 var buffer = require('vinyl-buffer');
 var gutil = require('gulp-util');
 var assign = require('lodash.assign');
+var htmlmin = require('gulp-htmlmin');
+var browsersync = require('browser-sync');
 
 var config = new Config();
 
@@ -31,10 +32,7 @@ var config = new Config();
 // clean
 // ------------------------------------------------------------------
 gulp.task('clean', function (cb) {
-    var typeScriptGenFiles = [
-        config.build
-    ];
-    del(typeScriptGenFiles, cb);
+    del([config.build], cb);
 });
 
 // ------------------------------------------------------------------
@@ -42,18 +40,15 @@ gulp.task('clean', function (cb) {
 // ------------------------------------------------------------------
 
 var browserifyOpts = assign({}, watchify.args, {
-    entries: [],
+    entries: ["src/main.ts"],
     debug: true
 });
-var browserifyBundle = watchify(
-    browserify(browserifyOpts)
-        .add("src/main.ts")
-        .plugin('tsify', config.tsSettings)
-);
+
+var browserifyBundle = browserify(browserifyOpts).plugin('tsify', config.tsSettings);
 
 browserifyBundle.on('log', gutil.log);
 
-function browserifyWatch() {
+function browserifyWatchTrigger() {
     return browserifyBundle.bundle()
         .on('error', gutil.log.bind(gutil, 'Browserify Error'))
         .pipe(source('bundle.js'))
@@ -66,33 +61,64 @@ function browserifyWatch() {
 }
 
 // ------------------------------------------------------------------
-// HTML
+// Build
 // ------------------------------------------------------------------
 
-gulp.task('html', function () {
-    console.log("build html");
-    return gulp.src('src/*.html')
-        .pipe(gulp.dest(config.build));
+gulp.task('build:html', function () {
+    return gulp.src(config.sourceHtml)
+        .pipe(htmlmin({collapseWhitespace: true}))
+        .pipe(gulp.dest(config.build))
+});
+
+gulp.task('build:js', function () {
+    return gulp.src(config.sourceJavaScript)
+        .pipe(ngAnnotate())
+        .pipe(uglify())
+        .pipe(gulp.dest(config.build))
+});
+
+gulp.task('build:ts', function () {
+    browserifyWatchTrigger();
+});
+
+gulp.task('build', ["build:ts", "build:html"], function () {
 });
 
 // ------------------------------------------------------------------
 // Watch
 // ------------------------------------------------------------------
 
+browserifyBundle.on('update', browserifyWatchTrigger);
 
-browserifyBundle.on('update', browserifyWatch);
-
-gulp.task('watchHTML', ['html'], function () {
-    return watch('src/*.html', ['html']);
+gulp.task('browsersync', ['build'], function () {
+    browsersync({
+        open: false,
+        server: {
+            baseDir: [config.build]
+        },
+        port: 9999,
+        files: [
+            config.build + '**/*.js',
+            config.build + '**/*.html',
+            config.build + '**/*.css',
+            config.build + '**/*.svg',
+            config.build + '**/*.png',
+            config.build + '**/*.jpg',
+            config.build + '**/*.gif'
+        ]
+    });
 });
 
-gulp.task('watchTS', function () {
-    return browserifyWatch();
+gulp.task('watch', ["browsersync"], function () {
+    browserifyBundle = watchify(browserifyBundle);
+    browserifyWatchTrigger();
+    gulp.watch(config.sourceHtml, ['build:html']);
 });
+
 
 // ------------------------------------------------------------------
 // Default
 // ------------------------------------------------------------------
 
-gulp.task('default', ['watchHTML, watchTS']);
+gulp.task('default', ["watch"]);
 

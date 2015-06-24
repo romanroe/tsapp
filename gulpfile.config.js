@@ -2,19 +2,27 @@
 var GulpConfig = (function () {
     function GulpConfig() {
 
+        // ----------------------------------------------------------
+        // Source Paths
+        // ----------------------------------------------------------
+
         this.source = './src/';
-        this.allJavaScript = this.source + '/**/*.js';
-        this.allTypeScript = this.source + '/**/*.ts';
+        this.sourceHtml = this.source + "/**/*.html";
+        this.sourceJavaScript = this.source + "/**/*.js";
+
+        // ----------------------------------------------------------
+        // TypeScript Settings
+        // ----------------------------------------------------------
 
         this.tsSettings = {
             noImplicitAny: true
         };
 
-        //this.typings = './typings/';
-        //this.libraryTypeScriptDefinitions = './typings/**/*.ts';
+        // ----------------------------------------------------------
+        // Output
+        // ----------------------------------------------------------
 
         this.build = './build/';
-        this.buildJs = this.build + '/js';
     }
 
     return GulpConfig;

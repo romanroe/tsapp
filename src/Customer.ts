@@ -1,7 +1,7 @@
 export class MyService {
 
     methodA():number {
-        return 1;
+        return 111;
     }
 
     methodB():number {
@@ -20,3 +20,5 @@ export class MyController {
     }
 
 }
+
+

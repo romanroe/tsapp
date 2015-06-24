@@ -30,6 +30,7 @@
     "gulp-uglify": "latest",
     "gulp-htmlmin": "latest",
     "gulp-streamify": "latest",
-    "stream-combiner2": "latest"
+    "stream-combiner2": "latest",
+    "browser-sync": "latest"
   }
 }
