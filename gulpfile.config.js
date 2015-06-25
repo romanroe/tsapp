@@ -6,7 +6,7 @@ var GulpConfig = (function () {
         // Source Paths
         // ----------------------------------------------------------
 
-        this.source = './src/';
+        this.source = 'src';
         this.sourceHtml = this.source + "/**/*.html";
         this.sourceJavaScript = this.source + "/**/*.js";
 
@@ -22,7 +22,7 @@ var GulpConfig = (function () {
         // Output
         // ----------------------------------------------------------
 
-        this.build = './build/';
+        this.target = 'target';
     }
 
     return GulpConfig;

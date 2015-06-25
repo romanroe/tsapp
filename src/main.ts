@@ -6,4 +6,7 @@ angular.module("app", [])
     .service("myService", customer.MyService)
     .controller("MyController", customer.MyController);
 
-console.log("hello ww");
+console.log("3");
+console.log("3");
+console.log("3");
+console.log("3");
