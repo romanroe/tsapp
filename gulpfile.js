@@ -22,6 +22,8 @@ var assign = require('lodash.assign');
 var htmlmin = require('gulp-htmlmin');
 var browsersync = require('browser-sync');
 var es = require('event-stream');
+var cache = require('gulp-cached');
+var remember = require('gulp-remember');
 
 var config = new Config();
 
@@ -40,57 +42,32 @@ gulp.task('clean', function (cb) {
 // Build HTML
 // ------------------------------------------------------------------
 
-function buildHtml(watch) {
+function buildHtml() {
     var sources = gulp.src([
         config.target + '/**/*.js',
         config.target + '/**/*.css'
     ], {read: false});
 
     var s = gulp.src(config.sourceHtml);
-    s = watch ? s.pipe(watch(config.sourceHtml)) : s;
+    s = s.pipe(cache("js"));
+    s = s.pipe(inject(sources));
+    s = s.pipe(htmlmin({collapseWhitespace: true}));
     s = s.pipe(gulp.dest(config.target));
-    s = s.pipe(es.through(function (data) {
-
-        data = data.pipe(inject(sources));
-        data = data.pipe(htmlmin({collapseWhitespace: true}));
-        data = data.pipe(gulp.dest(config.target));
-
-    }));
-
-    //s = s.pipe(inject(sources));
-    //s = s.pipe(htmlmin({collapseWhitespace: true}));
-    //s = s.pipe(gulp.dest(config.target));
     return s;
-
 }
 
-gulp.task('build:html', function () {
-    return buildHtml(false);
+gulp.task('build:html', ["build:ts", "build:js"], function () {
+    return buildHtml();
 });
-
-// ------------------------------------------------------------------
-// Inject HTML
-// ------------------------------------------------------------------
-
-//gulp.task('inject', ["build"], function () {
-//    var target = gulp.src(config.target + '/index.html');
-//    var sources = gulp.src([
-//        config.target + '/**/*.js',
-//        config.target + '/**/*.css'
-//    ], {read: false});
-//
-//    return target.pipe(inject(sources))
-//        .pipe(gulp.dest(config.target));
-//});
 
 
 // ------------------------------------------------------------------
 // Build JavaScript
 // ------------------------------------------------------------------
 
-function buildJs(watch) {
+function buildJs() {
     var s = gulp.src(config.sourceJavaScript);
-    s = watch ? s.pipe(watch(config.sourceJavaScript)) : s;
+    s = s.pipe(cache("js"));
     s = s.pipe(ngAnnotate());
     s = s.pipe(uglify());
     s = s.pipe(gulp.dest(config.target));
@@ -98,8 +75,9 @@ function buildJs(watch) {
 }
 
 gulp.task('build:js', function () {
-    return buildJs(false);
+    return buildJs();
 });
+
 
 // ------------------------------------------------------------------
 // Build TypeScript
@@ -126,7 +104,7 @@ function buildTs() {
         .pipe(gulp.dest(config.target));
 }
 gulp.task('build:ts', function () {
-    buildTs();
+    return buildTs();
 });
 
 // ------------------------------------------------------------------
@@ -161,17 +139,14 @@ gulp.task('browsersync', ["build"], function () {
 gulp.task('watch', ["browsersync"], function () {
 
     browserifyBundle = watchify(browserifyBundle);
-    buildTs();
 
-    buildJs(true);
-    buildHtml(true);
+    //gulp.watch("src/**/*.ts", ["build:ts"]);
+    //gulp.watch("src/**/*.js", ["build:js"]);
+    //gulp.watch("src/**/*.html", ["build:html"]);
+    gulp.watch("src/**/*", ["build"]);
 });
 
-gulp.task('build', [], function () {
-    return merge(
-        [buildTs(), buildJs()],
-        buildHtml()
-    );
+gulp.task('build', ["build:js", "build:ts", "build:html"], function () {
 });
 
 gulp.task('dist', ['clean'], function () {

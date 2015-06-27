@@ -18,6 +18,20 @@ angular.module("app").controller("MyController2", function (myService) {
     console.log(1);
     console.log(1);
     console.log(1);
+    console.log(1);
+    console.log(1);
+    console.log(1);
+    console.log(1);
+    console.log(1);
+    console.log(1);
+    console.log(1);
+    console.log(1);
+    console.log(1);
+    console.log(1);
+    console.log(1);
+    console.log(1);
+    console.log(1);
+    console.log(1);
 
 
 });
