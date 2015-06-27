@@ -24,6 +24,7 @@ var browsersync = require('browser-sync');
 var es = require('event-stream');
 var cache = require('gulp-cached');
 var remember = require('gulp-remember');
+var typescript = require('gulp-typescript');
 
 var config = new Config();
 
@@ -83,35 +84,53 @@ gulp.task('build:js', function () {
 // Build TypeScript
 // ------------------------------------------------------------------
 
+var tsProject = ts.createProject({
+    declarationFiles: false,
+    noExternalResolve: false,
+    module: "commonjs"
+});
+
+gulp.task('build:ts', function () {
+    var tsResult = gulp.src('src/**/*.ts')
+        .pipe(cache("ts"))
+        .pipe(ts(tsProject));
+
+    return merge([ // Merge the two output streams, so this task is finished when the IO of both operations are done.
+        tsResult.dts.pipe(gulp.dest('tmpTsD')),
+        tsResult.js.pipe(gulp.dest('tmpTs'))
+    ]);
+});
+
 var browserifyOpts = assign({}, watchify.args, {
-    entries: ["src/main.ts"],
+    entries: ["tmpTs/main.js"],
     debug: true
 });
 
-var browserifyBundle = browserify(browserifyOpts).plugin('tsify', config.tsSettings);
+var browserifyBundle = browserify(browserifyOpts);//.plugin('tsify', config.tsSettings);
 
 browserifyBundle.on('log', gutil.log);
 
-function buildTs() {
+function buildTsBundle() {
     return browserifyBundle.bundle()
         .on('error', gutil.log.bind(gutil, 'Browserify Error'))
         .pipe(source('bundle.js'))
         .pipe(buffer())
         .pipe(sourcemaps.init({loadMaps: true}))
         .pipe(ngAnnotate())
-        .pipe(uglify())
+        //.pipe(uglify())
         .pipe(sourcemaps.write('./'))
         .pipe(gulp.dest(config.target));
 }
-gulp.task('build:ts', function () {
-    return buildTs();
+
+gulp.task('build:tsBundle', ["build:ts"], function () {
+    return buildTsBundle();
 });
+
+//browserifyBundle.on('update', buildTs);
 
 // ------------------------------------------------------------------
 // BrowserSync
 // ------------------------------------------------------------------
-
-browserifyBundle.on('update', buildTs);
 
 gulp.task('browsersync', ["build"], function () {
     browsersync({
@@ -140,7 +159,7 @@ gulp.task('watch', ["browsersync"], function () {
 
     browserifyBundle = watchify(browserifyBundle);
 
-    gulp.watch("src/**/*.ts", ["build:ts"]);
+    gulp.watch("src/**/*.ts", ["build:tsBundle"]);
     gulp.watch("src/**/*.js", ["build:js"]);
     gulp.watch("src/**/*.html", ["build:html"]);
     //gulp.watch("src/**/*", ["build"]);
