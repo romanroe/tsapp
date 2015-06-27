@@ -140,10 +140,10 @@ gulp.task('watch', ["browsersync"], function () {
 
     browserifyBundle = watchify(browserifyBundle);
 
-    //gulp.watch("src/**/*.ts", ["build:ts"]);
-    //gulp.watch("src/**/*.js", ["build:js"]);
-    //gulp.watch("src/**/*.html", ["build:html"]);
-    gulp.watch("src/**/*", ["build"]);
+    gulp.watch("src/**/*.ts", ["build:ts"]);
+    gulp.watch("src/**/*.js", ["build:js"]);
+    gulp.watch("src/**/*.html", ["build:html"]);
+    //gulp.watch("src/**/*", ["build"]);
 });
 
 gulp.task('build', ["build:js", "build:ts", "build:html"], function () {

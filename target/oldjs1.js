@@ -1,0 +1,1 @@
+angular.module("app").controller("MyController2",["myService",function(o){this.value=o.methodB(),console.log(1),console.log(1),console.log(1),console.log(1),console.log(1),console.log(1),console.log(1),console.log(1)}]);
