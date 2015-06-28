@@ -19,7 +19,7 @@ for (var fileI = 0; fileI < 200; fileI++) {
         content += "}\n\n";
     }
 
-    fs.writeFileSync("src/f" + fileI + ".ts", content);
+    fs.writeFileSync("src/gen/ts/f" + fileI + ".ts", content);
 
 }
 

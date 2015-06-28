@@ -14613,7 +14613,7 @@ exports.C99_9 = C99_9;
 },{"./f98":200}],202:[function(require,module,exports){
 /// <reference path="../typings/angularjs/angular"/>
 var customer = require("./Customer");
-var f99 = require("./f199");
+var f99 = require("./gen/ts/f199");
 console.log(f99);
 angular.module("app", []).service("myService", customer.MyService).controller("MyController", customer.MyController);
 console.log("123");
@@ -14624,12 +14624,8 @@ console.log("123");
 console.log("123");
 console.log("123");
 console.log("123");
-console.log("123");
-console.log("123");
-console.log("123");
-console.log("123");
 
-},{"./Customer":1,"./f199":113}]},{},[202])
+},{"./Customer":1,"./gen/ts/f199":113}]},{},[202])
 
 
 //# sourceMappingURL=bundle.js.map

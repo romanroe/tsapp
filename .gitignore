@@ -1,4 +1,4 @@
 .idea
 node_modules
-src/f*.ts
+src/gen/
 tmpTs
