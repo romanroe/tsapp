@@ -25,6 +25,7 @@ var es = require('event-stream');
 var cache = require('gulp-cached');
 var remember = require('gulp-remember');
 var typescript = require('gulp-typescript');
+var webpack = require("webpack");
 
 var config = new Config();
 
@@ -44,16 +45,16 @@ gulp.task('clean', function (cb) {
 // ------------------------------------------------------------------
 
 function buildHtml() {
-    var sources = gulp.src([
-        config.target + '/**/*.js',
-        config.target + '/**/*.css'
-    ], {read: false});
+    //var sources = gulp.src([
+    //    config.target + '/**/*.js',
+    //    config.target + '/**/*.css'
+    //], {read: false});
 
     var s = gulp.src(config.sourceHtml);
-    s = s.pipe(cache("js"));
-    s = s.pipe(inject(sources));
+    s = s.pipe(cache("html"));
+    //s = s.pipe(inject(sources));
     s = s.pipe(htmlmin({collapseWhitespace: true}));
-    s = s.pipe(gulp.dest(config.target));
+    s = s.pipe(gulp.dest(config.targetApp));
     return s;
 }
 
@@ -71,7 +72,7 @@ function buildJs() {
     s = s.pipe(cache("js"));
     s = s.pipe(ngAnnotate());
     s = s.pipe(uglify());
-    s = s.pipe(gulp.dest(config.target));
+    s = s.pipe(gulp.dest(config.targetJs));
     return s;
 }
 
@@ -91,42 +92,43 @@ var tsProject = ts.createProject({
 });
 
 gulp.task('build:ts', function () {
-    var tsResult = gulp.src('src/**/*.ts')
+    var tsResult = gulp.src(config.sourceTypeScript)
         .pipe(cache("ts"))
         .pipe(ts(tsProject));
 
+    tsResult.js
+        .pipe(ngAnnotate())
+        //.pipe(uglify())
+    ;
+
     return merge([ // Merge the two output streams, so this task is finished when the IO of both operations are done.
-        tsResult.dts.pipe(gulp.dest('tmpTsD')),
-        tsResult.js.pipe(gulp.dest('tmpTs'))
+        tsResult.dts.pipe(gulp.dest(config.targetJs)),
+        tsResult.js.pipe(gulp.dest(config.targetJs))
     ]);
 });
 
-var browserifyOpts = assign({}, watchify.args, {
-    entries: ["tmpTs/main.js"],
-    debug: true
-});
 
-var browserifyBundle = browserify(browserifyOpts);//.plugin('tsify', config.tsSettings);
+// ------------------------------------------------------------------
+// Webpack
+// ------------------------------------------------------------------
 
-browserifyBundle.on('log', gutil.log);
-
-function buildTsBundle() {
-    return browserifyBundle.bundle()
-        .on('error', gutil.log.bind(gutil, 'Browserify Error'))
-        .pipe(source('bundle.js'))
-        .pipe(buffer())
-        .pipe(sourcemaps.init({loadMaps: true}))
-        .pipe(ngAnnotate())
-        //.pipe(uglify())
-        .pipe(sourcemaps.write('./'))
-        .pipe(gulp.dest(config.target));
+function buildBundle(watch) {
+    return webpack({
+        watch: watch == true,
+        entry: config.targetJs + "/" + config.webpackEntry,
+        output: {
+            path: __dirname + "/" + config.targetApp,
+            filename: config.webpackEntry
+        }
+    }, function (err, stats) {
+        if (err) throw new gutil.PluginError("webpack", err);
+        //gutil.log("[webpack]", stats.toString({}));
+    });
 }
 
-gulp.task('build:tsBundle', ["build:ts"], function () {
-    return buildTsBundle();
+gulp.task('build:bundle', [], function () {
+    return buildBundle();
 });
-
-//browserifyBundle.on('update', buildTs);
 
 // ------------------------------------------------------------------
 // BrowserSync
@@ -136,17 +138,11 @@ gulp.task('browsersync', ["build"], function () {
     browsersync({
         open: false,
         server: {
-            baseDir: [config.target]
+            baseDir: [config.targetApp]
         },
         port: 9999,
         files: [
-            config.target + '/**/*.js',
-            config.target + '/**/*.html',
-            config.target + '/**/*.css',
-            config.target + '/**/*.svg',
-            config.target + '/**/*.png',
-            config.target + '/**/*.jpg',
-            config.target + '/**/*.gif'
+            config.targetApp + '/**/*'
         ]
     });
 });
@@ -157,12 +153,11 @@ gulp.task('browsersync', ["build"], function () {
 
 gulp.task('watch', ["browsersync"], function () {
 
-    browserifyBundle = watchify(browserifyBundle);
-
-    gulp.watch("src/**/*.ts", ["build:tsBundle"]);
+    gulp.watch("src/**/*.ts", ["build:ts"]);
     gulp.watch("src/**/*.js", ["build:js"]);
     gulp.watch("src/**/*.html", ["build:html"]);
-    //gulp.watch("src/**/*", ["build"]);
+
+    buildBundle(true);
 });
 
 gulp.task('build', ["build:js", "build:ts", "build:html"], function () {

@@ -34,6 +34,8 @@
     "browser-sync": "latest",
     "event-stream": "latest",
     "gulp-cached": "latest",
-    "gulp-remember": "latest"
+    "gulp-remember": "latest",
+    "webpack": "latest",
+    "script-loader": "latest"
   }
 }

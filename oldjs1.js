@@ -1,0 +1,1 @@
+angular.module("app").controller("MyController2",function(l){this.value=l.methodB()});
