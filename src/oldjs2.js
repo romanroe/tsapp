@@ -1,7 +1,7 @@
 
-angular.module("app").controller("MyController3", function (myService) {
+angular.module("app").controller("MyController3", function (customerService) {
 
-    this.value = myService.methodB();
+    this.value = customerService.methodB();
 
 });
 

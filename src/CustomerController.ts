@@ -1,3 +1,4 @@
+
 import CustomerService = require("./CustomerService");
 
 class CustomerController {
@@ -5,8 +6,8 @@ class CustomerController {
     value:number;
 
     // @ngInject
-    constructor(myService:CustomerService) {
-        this.value = myService.methodA() + 200;
+    constructor(customerService:CustomerService) {
+        this.value = customerService.methodA() + 1000;
     }
 
 }

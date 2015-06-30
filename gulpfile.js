@@ -1,5 +1,6 @@
 'use strict';
 
+var path = require('path');
 var gulp = require('gulp');
 //var debug = require('gulp-debug');
 var inject = require('gulp-inject');
@@ -25,7 +26,11 @@ var es = require('event-stream');
 var cache = require('gulp-cached');
 var remember = require('gulp-remember');
 var typescript = require('gulp-typescript');
+var ExtractTextPlugin = require('extract-text-webpack-plugin');
+
 var webpack = require("webpack");
+var ngAnnotatePlugin = require('ng-annotate-webpack-plugin');
+
 
 var config = new Config();
 
@@ -68,10 +73,13 @@ gulp.task('build:html', ["build:ts", "build:js"], function () {
 // ------------------------------------------------------------------
 
 function buildJs() {
+    return;
     var s = gulp.src(config.sourceJavaScript);
     s = s.pipe(cache("js"));
+    s = s.pipe(sourcemaps.init());
     s = s.pipe(ngAnnotate());
     s = s.pipe(uglify());
+    s = s.pipe(sourcemaps.write("../app"));
     s = s.pipe(gulp.dest(config.targetJs));
     return s;
 }
@@ -92,19 +100,22 @@ var tsProject = ts.createProject({
 });
 
 gulp.task('build:ts', function () {
+    return;
     var tsResult = gulp.src(config.sourceTypeScript)
         .pipe(cache("ts"))
+        .pipe(sourcemaps.init())
         .pipe(ts(tsProject));
 
-    tsResult.js
+    return tsResult.js
         .pipe(ngAnnotate())
-        //.pipe(uglify())
-    ;
+        .pipe(uglify())
+        .pipe(sourcemaps.write("."))
+        .pipe(gulp.dest(config.targetJs));
 
-    return merge([ // Merge the two output streams, so this task is finished when the IO of both operations are done.
-        tsResult.dts.pipe(gulp.dest(config.targetJs)),
-        tsResult.js.pipe(gulp.dest(config.targetJs))
-    ]);
+    //return merge([
+    //    tsResult.js.pipe(gulp.dest(config.targetJs)),
+    //    tsResult.dts.pipe(gulp.dest(config.targetJs))
+    //]);
 });
 
 
@@ -114,15 +125,49 @@ gulp.task('build:ts', function () {
 
 function buildBundle(watch) {
     return webpack({
+        plugins: [
+            //new ExtractTextPlugin('style.css', {
+            //    allChunks: true
+            //}),
+            new ngAnnotatePlugin({
+                add: true
+            })
+            //,
+            //new webpack.optimize.UglifyJsPlugin({
+            //    compress: {
+            //        warnings: false
+            //    }
+            //})
+        ],
+        resolve: {
+            extensions: ['', '.webpack.js', '.web.js', '.ts', '.js']
+        },
         watch: watch == true,
-        entry: config.targetJs + "/" + config.webpackEntry,
+        devtool: 'source-map',
+        module: {
+            //preLoaders: [
+            //    {
+            //        test: /\.js$/,
+            //        loader: "source-map-loader"
+            //    }
+            //],
+            loaders: [
+                {test: /\.ts$/, loader: 'typescript-loader'},
+                //{test: /\.scss$/, loader: ExtractTextPlugin.extract('css!sass')}
+                {test: /\.scss$/, loader: "style!css!sass"}
+            ]
+        },
+        //entry: __dirname + "/" + config.targetJs + "/" + config.webpackEntry,
+        entry: __dirname + "/" + config.source + "/" + config.webpackEntry,
         output: {
             path: __dirname + "/" + config.targetApp,
-            filename: config.webpackEntry
+            filename: "webpack." + config.webpackEntry
         }
     }, function (err, stats) {
         if (err) throw new gutil.PluginError("webpack", err);
-        //gutil.log("[webpack]", stats.toString({}));
+        gutil.log("[webpack]", stats.toString({
+            cached: false
+        }));
     });
 }
 
@@ -157,7 +202,7 @@ gulp.task('watch', ["browsersync"], function () {
     gulp.watch("src/**/*.js", ["build:js"]);
     gulp.watch("src/**/*.html", ["build:html"]);
 
-    buildBundle(true);
+    return buildBundle(true);
 });
 
 gulp.task('build', ["build:js", "build:ts", "build:html"], function () {

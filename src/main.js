@@ -1,14 +1,18 @@
 
-require("script!./angular.js");
+require("./angular.js");
+angular.module("app", []);
 
-var CustomerService = require("./CustomerService");
+//require("./style.scss");
+
+require("./CustomerService");
 var CustomerController = require("./CustomerController");
 
-
-angular.module("app", [])
-    .service("myService", CustomerService)
+angular.module("app")
+    //.service("customerService", CustomerService)
     .controller("MyController", CustomerController);
 
-require("script!./oldjs1.js");
-require("script!./oldjs2.js");
+require("./oldjs2.js");
+require("./oldjs1.js");
+
+//require("./gen/ts/f199");
 

@@ -36,6 +36,13 @@
     "gulp-cached": "latest",
     "gulp-remember": "latest",
     "webpack": "latest",
-    "script-loader": "latest"
+    "ng-annotate-webpack-plugin": "latest",
+    "extract-text-webpack-plugin": "latest",
+    "typescript-loader": "latest",
+    "source-map-loader": "latest",
+    "script-loader": "latest",
+    "sass-loader": "latest",
+    "css-loader": "^0.14",
+    "style-loader": "latest"
   }
 }
