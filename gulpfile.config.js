@@ -6,9 +6,20 @@ var GulpConfig = (function () {
         // Source Paths
         // ----------------------------------------------------------
 
+        this.libraries = [
+            "bower_components/angular/angular.min.js",
+
+            "bower_components/bootstrap/dist/css/bootstrap.min.css",
+            "bower_components/bootstrap/dist/js/bootstrap.min.js"
+        ];
+
+        // ----------------------------------------------------------
+        // Source Paths
+        // ----------------------------------------------------------
+
         this.source = 'src';
 
-        this.browserifyMain = "main.js";
+        this.typeScriptEntry = "main.js";
 
         // ----------------------------------------------------------
         // TypeScript Settings

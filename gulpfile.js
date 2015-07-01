@@ -43,6 +43,16 @@ gulp.task('clean', function (cb) {
 });
 
 // ------------------------------------------------------------------
+// Build Libraries
+// ------------------------------------------------------------------
+
+gulp.task('build:libraries', [], function () {
+    var s = gulp.src(config.libraries);
+    s = s.pipe(gulp.dest(config.targetApp + "/lib"));
+    return s;
+});
+
+// ------------------------------------------------------------------
 // Build HTML
 // ------------------------------------------------------------------
 
@@ -54,21 +64,31 @@ gulp.task('build:html', [], function () {
 });
 
 gulp.task('build:htmlBundle', ["build:html", "build:tsBundle", "build:js"], function () {
+    var libraryStream = gulp.src(config.targetApp + "/lib/**/*");
+
     var jsCssStream = gulp.src([
         config.targetApp + '/**/*.js',
         config.targetApp + '/**/*.css',
-        "!" + config.targetApp + "/" + config.browserifyMain
+        "!lib/**/*",
+        "!" + config.targetApp + "/" + config.typeScriptEntry
     ], {read: false});
 
     var tsStream = gulp.src([
-        config.targetApp + "/" + config.browserifyMain
+        config.targetApp + "/" + config.typeScriptEntry
     ], {read: false});
 
 
     var s = gulp.src(config.targetApp + "/**/*.html");
     s = s.pipe(cache("htmlBundle"));
-    s = s.pipe(inject(series(jsCssStream, tsStream), {relative: true}));
-    s = s.pipe(htmlmin({collapseWhitespace: true}));
+    s = s.pipe(inject(series(
+        libraryStream,
+        jsCssStream,
+        tsStream
+    ), {relative: true}));
+    s = s.pipe(htmlmin({
+        collapseWhitespace: true,
+        removeComments: true
+    }));
     s = s.pipe(gulp.dest(config.targetApp));
     return s;
 });
@@ -107,7 +127,6 @@ gulp.task('build:ts', function () {
         .pipe(ts(tsProject));
 
     tsResult.js.pipe(ngAnnotate());
-
     tsResult.pipe(sourcemaps.write());
 
     return merge([
@@ -117,7 +136,7 @@ gulp.task('build:ts', function () {
 });
 
 var browserifyOpts = assign({}, watchify.args, {
-    entries: [config.targetTmp + "/ts/" + config.browserifyMain],
+    entries: [config.targetTmp + "/ts/" + config.typeScriptEntry],
     debug: true
 });
 
@@ -128,7 +147,7 @@ browserifyBundle.on('log', gutil.log);
 function buildTsBundle() {
     return browserifyBundle.bundle()
         .on('error', gutil.log.bind(gutil, 'Browserify Error'))
-        .pipe(source(config.browserifyMain))
+        .pipe(source(config.typeScriptEntry))
         .pipe(buffer())
         .pipe(sourcemaps.init({loadMaps: true}))
         .pipe(uglify())
@@ -178,7 +197,7 @@ gulp.task('watch', ["browsersync"], function () {
     gulp.watch("src/**/*.html", ["build:htmlBundle"]);
 });
 
-gulp.task('build', ["build:js", "build:tsBundle", "build:htmlBundle"], function () {
+gulp.task('build', ["build:libraries", "build:js", "build:tsBundle", "build:htmlBundle"], function () {
 });
 
 gulp.task('dist', ['clean'], function () {

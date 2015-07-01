@@ -1,0 +1,11 @@
+{
+  "name": "tsapp",
+  "version": "0.0.0",
+  "dependencies": {
+    "jquery": "~1.9.1",
+    "angular": "^1.4",
+    "bootstrap": "3.3.2"
+  },
+  "devDependencies": {
+  }
+}
