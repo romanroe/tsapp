@@ -47,7 +47,7 @@ function buildHtml() {
     var sources = gulp.src([
         config.target + '/**/*.js',
         config.target + '/**/*.css'
-    ], {read: false});
+    ], {read: false}, {relative: true});
 
     var s = gulp.src(config.sourceHtml);
     s = s.pipe(cache("js"));
@@ -93,11 +93,13 @@ var tsProject = ts.createProject({
 gulp.task('build:ts', function () {
     var tsResult = gulp.src('src/**/*.ts')
         .pipe(cache("ts"))
+        .pipe(sourcemaps.init())
         .pipe(ts(tsProject));
 
     return merge([ // Merge the two output streams, so this task is finished when the IO of both operations are done.
         tsResult.dts.pipe(gulp.dest('tmpTsD')),
-        tsResult.js.pipe(gulp.dest('tmpTs'))
+        tsResult.js
+            .pipe(gulp.dest('tmpTs'))
     ]);
 });
 
@@ -117,7 +119,7 @@ function buildTsBundle() {
         .pipe(buffer())
         .pipe(sourcemaps.init({loadMaps: true}))
         .pipe(ngAnnotate())
-        //.pipe(uglify())
+        .pipe(uglify())
         .pipe(sourcemaps.write('./'))
         .pipe(gulp.dest(config.target));
 }
