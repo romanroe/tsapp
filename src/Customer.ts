@@ -1,10 +1,11 @@
 export class MyService {
 
     methodA():number {
-        return 111;
+        return 1;
     }
 
     methodB():number {
+        var x;
         return 2;
     }
 

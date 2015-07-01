@@ -7,22 +7,31 @@ var GulpConfig = (function () {
         // ----------------------------------------------------------
 
         this.source = 'src';
-        this.sourceHtml = this.source + "/**/*.html";
-        this.sourceJavaScript = this.source + "/**/*.js";
+
+        this.browserifyMain = "main.js";
 
         // ----------------------------------------------------------
         // TypeScript Settings
         // ----------------------------------------------------------
 
         this.tsSettings = {
-            noImplicitAny: true
+            declarationFiles: true,
+            noExternalResolve: false,
+            noImplicitAny: false,
+            module: "commonjs"
         };
 
         // ----------------------------------------------------------
         // Output
         // ----------------------------------------------------------
 
-        this.target = 'target';
+        this.target = "target";
+
+        this.targetTmp = this.target + "/tmp";
+
+        this.targetApp = this.target + "/app";
+
+        this.browserifyBundle = "zzzzz.js";
     }
 
     return GulpConfig;

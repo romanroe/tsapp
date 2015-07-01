@@ -32,6 +32,8 @@ var config = new Config();
 //    return gulp.src(config.allTypeScript).pipe(tslint()).pipe(tslint.report('prose'));
 //});
 
+var developmentMode = false;
+
 // ------------------------------------------------------------------
 // clean
 // ------------------------------------------------------------------
@@ -43,22 +45,25 @@ gulp.task('clean', function (cb) {
 // Build HTML
 // ------------------------------------------------------------------
 
-function buildHtml() {
-    var sources = gulp.src([
-        config.target + '/**/*.js',
-        config.target + '/**/*.css'
-    ], {read: false}, {relative: true});
-
-    var s = gulp.src(config.sourceHtml);
-    s = s.pipe(cache("js"));
-    s = s.pipe(inject(sources));
-    s = s.pipe(htmlmin({collapseWhitespace: true}));
-    s = s.pipe(gulp.dest(config.target));
+gulp.task('build:html', [], function () {
+    var s = gulp.src(config.source + "/**/*.html");
+    s = s.pipe(cache("html"));
+    s = s.pipe(gulp.dest(config.targetApp));
     return s;
-}
+});
 
-gulp.task('build:html', ["build:ts", "build:js"], function () {
-    return buildHtml();
+gulp.task('build:htmlBundle', ["build:html", "build:tsBundle", "build:js"], function () {
+    var sources = gulp.src([
+        config.targetApp + '/**/*.js',
+        config.targetApp + '/**/*.css'
+    ], {read: false});
+
+    var s = gulp.src(config.targetApp + "/**/*.html");
+    s = s.pipe(cache("htmlBundle"));
+    s = s.pipe(inject(sources, {relative: true}));
+    s = s.pipe(htmlmin({collapseWhitespace: true}));
+    s = s.pipe(gulp.dest(config.targetApp));
+    return s;
 });
 
 
@@ -67,11 +72,11 @@ gulp.task('build:html', ["build:ts", "build:js"], function () {
 // ------------------------------------------------------------------
 
 function buildJs() {
-    var s = gulp.src(config.sourceJavaScript);
+    var s = gulp.src(config.source + "/**/*.js");
     s = s.pipe(cache("js"));
     s = s.pipe(ngAnnotate());
     s = s.pipe(uglify());
-    s = s.pipe(gulp.dest(config.target));
+    s = s.pipe(gulp.dest(config.targetApp));
     return s;
 }
 
@@ -84,44 +89,43 @@ gulp.task('build:js', function () {
 // Build TypeScript
 // ------------------------------------------------------------------
 
-var tsProject = ts.createProject({
-    declarationFiles: false,
-    noExternalResolve: false,
-    module: "commonjs"
-});
+var tsProject = ts.createProject(config.tsSettings);
 
 gulp.task('build:ts', function () {
-    var tsResult = gulp.src('src/**/*.ts')
+    var tsResult = gulp.src(config.source + '/**/*.ts')
         .pipe(cache("ts"))
         .pipe(sourcemaps.init())
         .pipe(ts(tsProject));
 
-    return merge([ // Merge the two output streams, so this task is finished when the IO of both operations are done.
-        tsResult.dts.pipe(gulp.dest('tmpTsD')),
-        tsResult.js
-            .pipe(gulp.dest('tmpTs'))
+    tsResult.js.pipe(ngAnnotate());
+
+    tsResult.pipe(sourcemaps.write());
+
+    return merge([
+        tsResult.dts.pipe(gulp.dest(config.targetTmp + "/djs")),
+        tsResult.js.pipe(gulp.dest(config.targetTmp + "/js"))
     ]);
 });
 
 var browserifyOpts = assign({}, watchify.args, {
-    entries: ["tmpTs/main.js"],
+    entries: [config.targetTmp + "/js/" + config.browserifyMain],
     debug: true
 });
 
-var browserifyBundle = browserify(browserifyOpts);//.plugin('tsify', config.tsSettings);
+var browserifyBundle = browserify(browserifyOpts);
 
 browserifyBundle.on('log', gutil.log);
 
 function buildTsBundle() {
     return browserifyBundle.bundle()
         .on('error', gutil.log.bind(gutil, 'Browserify Error'))
-        .pipe(source('bundle.js'))
+        .pipe(source(config.browserifyBundle))
         .pipe(buffer())
-        .pipe(sourcemaps.init({loadMaps: true}))
-        .pipe(ngAnnotate())
+        //.pipe(sourcemaps.init({loadMaps: true}))
+        //.pipe(ngAnnotate())
         .pipe(uglify())
-        .pipe(sourcemaps.write('./'))
-        .pipe(gulp.dest(config.target));
+        //.pipe(sourcemaps.write('./'))
+        .pipe(gulp.dest(config.targetApp));
 }
 
 gulp.task('build:tsBundle', ["build:ts"], function () {
@@ -158,16 +162,15 @@ gulp.task('browsersync', ["build"], function () {
 // ------------------------------------------------------------------
 
 gulp.task('watch', ["browsersync"], function () {
-
+    developmentMode = true;
     browserifyBundle = watchify(browserifyBundle);
 
     gulp.watch("src/**/*.ts", ["build:tsBundle"]);
     gulp.watch("src/**/*.js", ["build:js"]);
-    gulp.watch("src/**/*.html", ["build:html"]);
-    //gulp.watch("src/**/*", ["build"]);
+    gulp.watch("src/**/*.html", ["build:htmlBundle"]);
 });
 
-gulp.task('build', ["build:js", "build:ts", "build:html"], function () {
+gulp.task('build', ["build:js", "build:tsBundle", "build:htmlBundle"], function () {
 });
 
 gulp.task('dist', ['clean'], function () {

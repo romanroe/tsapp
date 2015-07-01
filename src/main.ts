@@ -10,14 +10,3 @@ angular.module("app", [])
     .controller("MyController", customer.MyController);
 
 console.log("123");
-console.log("123");
-console.log("123");
-console.log("123");
-console.log("123");
-console.log("123");
-console.log("123");
-console.log("123");
-console.log("123");
-console.log("123");
-console.log("123");
-console.log("123");

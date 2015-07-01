@@ -5,10 +5,6 @@ angular.module("app").controller("MyController3", function (myService) {
 
 
     console.log(2);
-    console.log(2);
-    console.log(2);
-    console.log(2);
-    console.log(2);
 
 });
 
