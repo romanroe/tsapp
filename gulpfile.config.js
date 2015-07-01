@@ -15,7 +15,7 @@ var GulpConfig = (function () {
         // ----------------------------------------------------------
 
         this.tsSettings = {
-            declarationFiles: true,
+            declarationFiles: false,
             noExternalResolve: false,
             noImplicitAny: false,
             module: "commonjs"
@@ -31,7 +31,6 @@ var GulpConfig = (function () {
 
         this.targetApp = this.target + "/app";
 
-        this.browserifyBundle = "zzzzz.js";
     }
 
     return GulpConfig;

@@ -1,3 +1,5 @@
+declare var xxx;
+
 export class MyService {
 
     methodA():number {

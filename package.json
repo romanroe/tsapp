@@ -16,6 +16,7 @@
     "gulp-util": "latest",
     "gulp-watch": "latest",
     "merge2": "latest",
+    "stream-series": "latest",
     "browserify": "latest",
     "watchify": "latest",
     "vinyl-source-stream": "latest",
