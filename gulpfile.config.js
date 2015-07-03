@@ -6,8 +6,11 @@ var GulpConfig = (function () {
         // Source Paths
         // ----------------------------------------------------------
 
-        this.libraries = [
+        this.vendor = [
+            "bower_components/jquery/jquery.min.js",
+
             "bower_components/angular/angular.min.js",
+            "bower_components/angular/README.md",
 
             "bower_components/bootstrap/dist/css/bootstrap.min.css",
             "bower_components/bootstrap/dist/js/bootstrap.min.js"
@@ -26,6 +29,7 @@ var GulpConfig = (function () {
         // ----------------------------------------------------------
 
         this.tsSettings = {
+            noEmitOnError: true,
             declarationFiles: false,
             noExternalResolve: false,
             noImplicitAny: false,

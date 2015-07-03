@@ -1,13 +1,11 @@
-declare var xxx;
 
 export class MyService {
 
     methodA():number {
-        return 1;
+        return 123;
     }
 
     methodB():number {
-        var x;
         return 2;
     }
 
@@ -23,7 +21,6 @@ export class MyController {
     }
 
 }
-
 
 
 
