@@ -2,7 +2,7 @@
 export class MyService {
 
     methodA():number {
-        return 123;
+        return 1;
     }
 
     methodB():number {

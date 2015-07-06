@@ -24,6 +24,11 @@ var GulpConfig = (function () {
 
         this.typeScriptEntry = "main.js";
 
+        this.scssFiles = [
+            "**/*.scss",
+            "**/!_*.scss"
+        ];
+
         // ----------------------------------------------------------
         // TypeScript Settings
         // ----------------------------------------------------------

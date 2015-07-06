@@ -32,7 +32,20 @@ var plumber = require('gulp-plumber');
 
 var Config = require('./gulpfile.config');
 var config = new Config();
+
+var firstRun = true;
 var developmentMode = false;
+var abortBuild = false;
+
+function checkAbortBuild() {
+    if (abortBuild) {
+        abortBuild = false;
+        if (!firstRun) {
+            return true;
+        }
+    }
+    return false;
+}
 
 // ------------------------------------------------------------------
 // clean
@@ -119,7 +132,7 @@ gulp.task('build:html', [], function () {
 // ------------------------------------------------------------------
 
 gulp.task('build:css', function () {
-    var scss = gulp.src(config.source + "/**/*.scss");
+    var scss = gulp.src(config.scssFiles, {cwd: config.source});
     scss = scss.pipe(cache("scss"));
     scss = developmentMode ? scss.pipe(sourcemaps.init()) : scss;
     scss = scss.pipe(sass().on('error', sass.logError));
@@ -170,12 +183,14 @@ gulp.task('build:ts', function () {
     if (developmentMode) {
         gulp.src(config.source + '/**/*.ts')
             .pipe(cache("lint:ts"))
-            .pipe(plumber(function () {
-            }))
             .pipe(tslint()).pipe(tslint.report('prose', {emitError: false}));
     }
 
     var tsResult = gulp.src('**/*.ts', {cwd: config.source});
+    tsResult = tsResult.pipe(plumber(function () {
+        abortBuild = true;
+    }));
+
     tsResult = developmentMode ? tsResult.pipe(cache("ts")) : tsResult;
     tsResult = developmentMode ? tsResult.pipe(sourcemaps.init()) : tsResult;
     tsResult = tsResult.pipe(debug({title: "TypeScript:"}));
@@ -195,6 +210,11 @@ gulp.task('build:ts', function () {
 
 
 function buildTsBundle() {
+    if (checkAbortBuild()) {
+        return;
+    }
+    firstRun = false;
+
     if (!browserifyBundle) {
         var browserifyOpts = assign({}, watchify.args, {
             entries: [config.targetTmp + "/ts/" + config.typeScriptEntry],
