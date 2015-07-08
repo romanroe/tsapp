@@ -5,6 +5,8 @@
   "author": "",
   "devDependencies": {
     "del": "latest",
+    "systemjs": "0.18.4",
+    "systemjs-builder": "0.12.2",
     "gulp": "^3.8.11",
     "gulp-concat": "latest",
     "gulp-debug": "latest",

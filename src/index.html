@@ -6,24 +6,24 @@
 <body>
 
 <h1>TypeScript Controller</h1>
-<div ng-controller="MyController as myController">
-  <span>{{myController.value}}</span>
+<div ng-controller="MyController as ctrl">
+  <span>{{ctrl.value}}</span>
+  <input type="text" ng-model="firstname" ng-change="ctrl.onChange(firstname)">
 </div>
-xx
 
 <h1>JavaScript Controller 1</h1>
-<div ng-controller="MyController2 as myController2">
-<h1>{{myController2.value}}</h1>
+<div ng-controller="MyController2 as ctrl">
+  <h1>{{ctrl.value}}</h1>
 </div>
 
 <h1>JavaScript Controller 2</h1>
-<div ng-controller="MyController3 as myController2">
-<h1>{{myController2.value}}</h1>
+<div ng-controller="MyController3 as ctrl">
+  <h1>{{ctrl.value}}</h1>
 </div>
+
 
 <!-- inject:js -->
 <!-- endinject -->
-
 
 </body>
 </html>

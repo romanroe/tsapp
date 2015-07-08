@@ -93,10 +93,6 @@ gulp.task('build:vendor', [], function () {
 // ------------------------------------------------------------------
 
 gulp.task('build:html', [], function () {
-    var vendorStream = gulp.src(
-        ["___v.js", "___v.css"],
-        {read: false, cwd: config.targetApp});
-
     var jsCssStream = gulp.src([
         '**/*.js',
         '**/*.css',
@@ -113,7 +109,8 @@ gulp.task('build:html', [], function () {
     s = s.pipe(cache("html"));
     s = s.pipe(debug({title: "HTML:"}));
     s = s.pipe(inject(series(
-        vendorStream,
+        gulp.src(["system-polyfills.js", "system.js"], {read: false, cwd: "node_modules/systemjs/dist"}),
+        gulp.src(["___v.js", "___v.css"], {read: false, cwd: config.targetApp}),
         tsStream,
         jsCssStream
     ), {relative: false}));
@@ -187,6 +184,7 @@ gulp.task('build:ts', function () {
     }
 
     var tsResult = gulp.src('**/*.ts', {cwd: config.source});
+
     tsResult = tsResult.pipe(plumber(function () {
         abortBuild = true;
     }));
@@ -196,15 +194,15 @@ gulp.task('build:ts', function () {
     tsResult = tsResult.pipe(debug({title: "TypeScript:"}));
     tsResult = tsResult.pipe(ts(tsProject, undefined, ts.reporter.longReporter()));
 
-    tsResult.js.pipe(ngAnnotate());
+    var tsResultJs = tsResult.js.pipe(ngAnnotate());
 
     if (developmentMode) {
-        tsResult.pipe(sourcemaps.write());
+        tsResultJs = tsResultJs.pipe(sourcemaps.write());
     }
 
     return merge([
         tsResult.dts.pipe(gulp.dest(config.targetTmp + "/dts")),
-        tsResult.js.pipe(gulp.dest(config.targetTmp + "/ts"))
+        tsResultJs.pipe(gulp.dest(config.targetTmp + "/ts"))
     ]);
 });
 
@@ -241,23 +239,16 @@ function buildTsBundle() {
     bundle = bundle.pipe(source("___t.js"));
     bundle = bundle.pipe(buffer());
     bundle = developmentMode ? bundle.pipe(sourcemaps.init({loadMaps: true})) : bundle;
-    bundle = bundle.pipe(uglify());
+    bundle = !developmentMode ? bundle.pipe(uglify()) : bundle;
     bundle = developmentMode ? bundle.pipe(sourcemaps.write()) : bundle;
     bundle = bundle.pipe(gulp.dest(config.targetApp));
     return bundle;
 }
 
-gulp.task('build:tsBundle', ["build:ts"], function () {
+gulp.task('build:tsBundle', ["build:ts"], function (cb) {
+    //cb();
     return buildTsBundle();
 });
-
-gulp.task('lint:ts', function () {
-    return gulp.src(config.source + "/**/*.ts")
-        .pipe(tslint())
-        .pipe(tslint.report('prose'));
-});
-
-//browserifyBundle.on('update', buildTs);
 
 
 // ------------------------------------------------------------------
@@ -272,14 +263,13 @@ gulp.task('browsersync', ["dev"], function () {
         },
         port: 9999,
         files: [
-            config.target + '/**/*.js',
-            config.target + '/**/*.html',
-            config.target + '/**/*.css',
-            config.target + '/**/*.svg',
-            config.target + '/**/*.png',
-            config.target + '/**/*.jpg',
-            config.target + '/**/*.gif',
-            "!" + config.target + '/tmp/**/*'
+            config.targetApp + '/**/*.js',
+            config.targetApp + '/**/*.html',
+            config.targetApp + '/**/*.css',
+            config.targetApp + '/**/*.svg',
+            config.targetApp + '/**/*.png',
+            config.targetApp + '/**/*.jpg',
+            config.targetApp + '/**/*.gif'
         ]
     });
 });
@@ -291,7 +281,6 @@ gulp.task('browsersync', ["dev"], function () {
 gulp.task('watch', ["browsersync"], function () {
     developmentMode = true;
     gulp.watch("src/**/*.ts", ["build:tsBundle"]);
-
 
     gulp.watch("src/**/*.js", ["build:js"]);
     gulp.watch("src/**/*.html", ["build:html"]);

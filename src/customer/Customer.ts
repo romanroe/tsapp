@@ -1,11 +1,12 @@
 
 export class MyService {
 
-    methodA():number {
+    methodA(): number {
+        console.log("customer");
         return 1;
     }
 
-    methodB():number {
+    methodB(): number {
         return 2;
     }
 
@@ -13,11 +14,15 @@ export class MyService {
 
 export class MyController {
 
-    value:number;
+    value: number;
 
     // @ngInject
-    constructor(myService:MyService) {
+    constructor(myService: MyService) {
         this.value = myService.methodA();
+    }
+
+    onChange(firstname: string) {
+        console.log(firstname);
     }
 
 }
