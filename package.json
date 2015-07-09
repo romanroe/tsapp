@@ -5,6 +5,7 @@
   "author": "",
   "devDependencies": {
     "del": "latest",
+    "mkdirp": "latest",
     "systemjs": "0.18.4",
     "systemjs-builder": "0.12.2",
     "gulp": "^3.8.11",

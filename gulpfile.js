@@ -2,6 +2,7 @@
 
 var fs = require('fs');
 var del = require('del');
+var mkdirp = require('mkdirp');
 var merge = require('merge2');
 var assign = require('lodash.assign');
 var series = require('stream-series');
@@ -85,7 +86,19 @@ gulp.task('build:vendor', [], function () {
         .pipe(debug({title: "Including vendor Asset:"}))
         .pipe(gulp.dest(config.targetApp + "/vendor"));
 
-    return merge(streamJs, streamCss, streamRest);
+    var streamSystemJs = gulp.src(
+        ["system-polyfills.js", "system.js"],
+        {cwd: "node_modules/systemjs/dist"})
+        .pipe(gulp.dest(config.targetApp + "/___systemjs"));
+
+    mkdirp(config.targetApp + "/___systemjs", function (err) {
+        fs.writeFileSync(
+            config.targetApp + "/___systemjs/___init.js",
+            "System.config({baseURL: '/___systemjs/app', defaultJSExtensions:true});System.import('main.js');"
+        );
+    });
+
+    return merge(streamJs, streamCss, streamRest, streamSystemJs);
 });
 
 // ------------------------------------------------------------------
@@ -96,6 +109,7 @@ gulp.task('build:html', [], function () {
     var jsCssStream = gulp.src([
         '**/*.js',
         '**/*.css',
+        "!___systemjs/**",
         "!___v.js",
         "!___v.css",
         "!___t.js"
@@ -109,8 +123,10 @@ gulp.task('build:html', [], function () {
     s = s.pipe(cache("html"));
     s = s.pipe(debug({title: "HTML:"}));
     s = s.pipe(inject(series(
-        gulp.src(["system-polyfills.js", "system.js"], {read: false, cwd: "node_modules/systemjs/dist"}),
         gulp.src(["___v.js", "___v.css"], {read: false, cwd: config.targetApp}),
+        gulp.src(
+            ["___systemjs/system.js", "___systemjs/system-polyfills.js", "___systemjs/___init.js"],
+            {read: false, cwd: config.targetApp}),
         tsStream,
         jsCssStream
     ), {relative: false}));
@@ -151,7 +167,7 @@ gulp.task('build:css', function () {
 // ------------------------------------------------------------------
 
 function buildJs() {
-    var s = gulp.src(config.source + "/**/*.js");
+    var s = gulp.src(config.source + "/**/*.js", {nosort: true});
     s = s.pipe(cache("js"));
     s = developmentMode ? s.pipe(sourcemaps.init()) : s;
     s = s.pipe(ngAnnotate());
@@ -246,8 +262,13 @@ function buildTsBundle() {
 }
 
 gulp.task('build:tsBundle', ["build:ts"], function (cb) {
+
+    return gulp.src(config.targetTmp + "/ts/**/*")
+        .pipe(gulp.dest(config.targetApp + "/___systemjs/app"));
+
+
     //cb();
-    return buildTsBundle();
+    //return buildTsBundle();
 });
 
 
