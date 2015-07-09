@@ -9,4 +9,3 @@ angular.module("app", [])
     .controller("MyController", customer.MyController)
     .controller("MyController2", car.MyController2);
 
-angular.bootstrap(document, ["app"]);

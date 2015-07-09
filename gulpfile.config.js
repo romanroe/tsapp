@@ -38,7 +38,7 @@ var GulpConfig = (function () {
             declarationFiles: false,
             noExternalResolve: false,
             noImplicitAny: false,
-            module: "amd"
+            module: "commonjs"
         };
 
         // ----------------------------------------------------------

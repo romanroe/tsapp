@@ -91,12 +91,12 @@ gulp.task('build:vendor', [], function () {
         {cwd: "node_modules/systemjs/dist"})
         .pipe(gulp.dest(config.targetApp + "/___systemjs"));
 
-    mkdirp(config.targetApp + "/___systemjs", function (err) {
-        fs.writeFileSync(
-            config.targetApp + "/___systemjs/___init.js",
-            "System.config({baseURL: '/___systemjs/app', defaultJSExtensions:true});System.import('main.js');"
-        );
-    });
+    //mkdirp(config.targetApp + "/___systemjs", function (err) {
+    //    fs.writeFileSync(
+    //        config.targetApp + "/___systemjs/___init.js",
+    //        "System.config({baseURL: '/___systemjs/app', defaultJSExtensions:true});System.import('main.js');"
+    //    );
+    //});
 
     return merge(streamJs, streamCss, streamRest, streamSystemJs);
 });
@@ -125,7 +125,7 @@ gulp.task('build:html', [], function () {
     s = s.pipe(inject(series(
         gulp.src(["___v.js", "___v.css"], {read: false, cwd: config.targetApp}),
         gulp.src(
-            ["___systemjs/system.js", "___systemjs/system-polyfills.js", "___systemjs/___init.js"],
+            ["___systemjs/system.js", "___systemjs/system-polyfills.js", "___systemjs/app/system.config.js"],
             {read: false, cwd: config.targetApp}),
         tsStream,
         jsCssStream
@@ -175,7 +175,8 @@ function buildJs() {
     s = developmentMode ? s.pipe(sourcemaps.write()) : s;
     s = s.pipe(debug({title: "JavaScript:"}));
     s = !developmentMode ? s.pipe(concat("___j.js")) : s;
-    s = s.pipe(gulp.dest(config.targetApp));
+    //s = s.pipe(gulp.dest(config.targetApp));
+    s = s.pipe(gulp.dest(config.targetApp + "/___systemjs/app"));
     return s;
 }
 
