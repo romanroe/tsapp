@@ -3,8 +3,7 @@ System.config({
     defaultJSExtensions: true
 });
 
-System.import('app.js').then(function(m) {
-    System.import('legacy/oldjs2.js').then(function() {
-        angular.bootstrap(document, ["app"]);
-    });
+System.import("app").then(function (m) {
+    angular.bootstrap(document, ["app"]);
 });
+

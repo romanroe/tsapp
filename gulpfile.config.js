@@ -22,7 +22,7 @@ var GulpConfig = (function () {
 
         this.source = 'src';
 
-        this.typeScriptEntry = "main.js";
+        //this.typeScriptEntry = "main.js";
 
         this.scssFiles = [
             "**/*.scss",

@@ -91,13 +91,6 @@ gulp.task('build:vendor', [], function () {
         {cwd: "node_modules/systemjs/dist"})
         .pipe(gulp.dest(config.targetApp + "/___systemjs"));
 
-    //mkdirp(config.targetApp + "/___systemjs", function (err) {
-    //    fs.writeFileSync(
-    //        config.targetApp + "/___systemjs/___init.js",
-    //        "System.config({baseURL: '/___systemjs/app', defaultJSExtensions:true});System.import('main.js');"
-    //    );
-    //});
-
     return merge(streamJs, streamCss, streamRest, streamSystemJs);
 });
 
@@ -124,11 +117,15 @@ gulp.task('build:html', [], function () {
     s = s.pipe(debug({title: "HTML:"}));
     s = s.pipe(inject(series(
         gulp.src(["___v.js", "___v.css"], {read: false, cwd: config.targetApp}),
+
         gulp.src(
             ["___systemjs/system.js", "___systemjs/system-polyfills.js", "___systemjs/app/system.config.js"],
             {read: false, cwd: config.targetApp}),
+
         tsStream,
+
         jsCssStream
+
     ), {relative: false}));
     s = s.pipe(htmlmin({
         collapseWhitespace: true,
@@ -219,11 +216,11 @@ gulp.task('build:ts', function () {
 
     return merge([
         tsResult.dts.pipe(gulp.dest(config.targetTmp + "/dts")),
-        tsResultJs.pipe(gulp.dest(config.targetTmp + "/ts"))
+        tsResultJs.pipe(gulp.dest(config.targetApp + "/___systemjs/app"))
     ]);
 });
 
-
+/*
 function buildTsBundle() {
     if (checkAbortBuild()) {
         return;
@@ -261,16 +258,18 @@ function buildTsBundle() {
     bundle = bundle.pipe(gulp.dest(config.targetApp));
     return bundle;
 }
+ */
 
-gulp.task('build:tsBundle', ["build:ts"], function (cb) {
-
-    return gulp.src(config.targetTmp + "/ts/**/*")
-        .pipe(gulp.dest(config.targetApp + "/___systemjs/app"));
+//gulp.task('build:tsBundle', ["build:ts"], function (cb) {
+//
+//    return gulp.src(config.targetTmp + "/ts/**/*")
+//        .pipe(gulp.dest(config.targetApp + "/___systemjs/app"));
 
 
     //cb();
     //return buildTsBundle();
-});
+//});
+
 
 
 // ------------------------------------------------------------------
@@ -302,7 +301,7 @@ gulp.task('browsersync', ["dev"], function () {
 
 gulp.task('watch', ["browsersync"], function () {
     developmentMode = true;
-    gulp.watch("src/**/*.ts", ["build:tsBundle"]);
+    gulp.watch("src/**/*.ts", ["build:ts"]);
 
     gulp.watch("src/**/*.js", ["build:js"]);
     gulp.watch("src/**/*.html", ["build:html"]);
@@ -313,7 +312,7 @@ gulp.task('dev', function (callback) {
     developmentMode = true;
     sequence(
         "clean",
-        ["build:vendor", "build:js", "build:tsBundle", "build:css"],
+        ["build:vendor", "build:js", "build:ts", "build:css"],
         "build:html",
         callback);
 });
@@ -321,7 +320,7 @@ gulp.task('dev', function (callback) {
 gulp.task('dist', function (callback) {
     sequence(
         "clean",
-        ["build:vendor", "build:js", "build:tsBundle", "build:css"],
+        ["build:vendor", "build:js", "build:ts", "build:css"],
         "build:html",
         callback);
 });

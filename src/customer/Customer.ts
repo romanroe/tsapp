@@ -2,12 +2,8 @@
 export class MyService {
 
     methodA(): number {
-        console.log("customer");
-        return 1;
-    }
-
-    methodB(): number {
-        return 2;
+        console.log("22");
+        return 22;
     }
 
 }
@@ -26,6 +22,8 @@ export class MyController {
     }
 
 }
+
+
 
 
 
