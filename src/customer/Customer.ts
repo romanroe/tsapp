@@ -2,8 +2,8 @@
 export class MyService {
 
     methodA(): number {
-        console.log("22");
-        return 22;
+        console.log("1");
+        return 1;
     }
 
 }

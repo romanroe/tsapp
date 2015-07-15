@@ -23,8 +23,6 @@
     "merge2": "latest",
     "stream-series": "latest",
     "run-sequence": "latest",
-    "browserify": "latest",
-    "watchify": "latest",
     "vinyl-source-stream": "latest",
     "vinyl-buffer": "latest",
     "lodash.assign": "latest",

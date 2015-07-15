@@ -8,6 +8,9 @@ var assign = require('lodash.assign');
 var series = require('stream-series');
 var sequence = require('run-sequence');
 
+var path = require("path");
+var Builder = require('systemjs-builder');
+
 var gulp = require('gulp');
 var debug = require('gulp-debug');
 var concat = require('gulp-concat');
@@ -25,8 +28,6 @@ var sass = require('gulp-sass');
 var inject = require('gulp-inject');
 var ts = require('gulp-typescript');
 var tslint = require('gulp-tslint');
-var browserify = require('browserify');
-var watchify = require('watchify');
 var source = require("vinyl-source-stream");
 var buffer = require("vinyl-buffer");
 var plumber = require('gulp-plumber');
@@ -38,15 +39,15 @@ var firstRun = true;
 var developmentMode = false;
 var abortBuild = false;
 
-function checkAbortBuild() {
-    if (abortBuild) {
-        abortBuild = false;
-        if (!firstRun) {
-            return true;
-        }
-    }
-    return false;
-}
+//function checkAbortBuild() {
+//    if (abortBuild) {
+//        abortBuild = false;
+//        if (!firstRun) {
+//            return true;
+//        }
+//    }
+//    return false;
+//}
 
 // ------------------------------------------------------------------
 // clean
@@ -99,17 +100,9 @@ gulp.task('build:vendor', [], function () {
 // ------------------------------------------------------------------
 
 gulp.task('build:html', [], function () {
-    var jsCssStream = gulp.src([
-        '**/*.js',
+    var cssStream = gulp.src([
         '**/*.css',
-        "!___systemjs/**",
-        "!___v.js",
-        "!___v.css",
-        "!___t.js"
-    ], {read: false, cwd: config.targetApp});
-
-    var tsStream = gulp.src([
-        "___t.js"
+        "!___v.css"
     ], {read: false, cwd: config.targetApp});
 
     var s = gulp.src(config.source + "/**/*.html");
@@ -122,10 +115,7 @@ gulp.task('build:html', [], function () {
             ["___systemjs/system.js", "___systemjs/system-polyfills.js", "___systemjs/app/system.config.js"],
             {read: false, cwd: config.targetApp}),
 
-        tsStream,
-
-        jsCssStream
-
+        cssStream
     ), {relative: false}));
     s = s.pipe(htmlmin({
         collapseWhitespace: true,
@@ -188,8 +178,6 @@ gulp.task('build:js', function () {
 
 var tsProject = ts.createProject('tsconfig.json');
 
-var browserifyBundle;
-
 gulp.task('build:ts', function () {
     if (developmentMode) {
         gulp.src(config.source + '/**/*.ts')
@@ -220,56 +208,35 @@ gulp.task('build:ts', function () {
     ]);
 });
 
-/*
-function buildTsBundle() {
-    if (checkAbortBuild()) {
-        return;
-    }
-    firstRun = false;
 
-    if (!browserifyBundle) {
-        var browserifyOpts = assign({}, watchify.args, {
-            entries: [config.targetTmp + "/ts/" + config.typeScriptEntry],
-            debug: developmentMode
-        });
-        browserifyBundle = browserify(browserifyOpts);
-        browserifyBundle.on('log', gutil.log);
+// ------------------------------------------------------------------
+// Build Bundle
+// ------------------------------------------------------------------
 
-        if (developmentMode) {
-            browserifyBundle = watchify(browserifyBundle);
+gulp.task('bundle', [], function () {
+
+    var builder = new Builder(
+        {
+        //    baseURL: 'some/folder'
+        //    transpiler: 'traceurx'
+
+
+            baseURL: 'target/app/___systemjs/app',
+            defaultJSExtensions: true
+
+
         }
-    }
+    )
+        .buildSFX("app.js", "target/OUTFILE.js", {minify: false})
+        .then(function () {
+            console.log('Build complete');
+        })
+        .catch(function (err) {
+            console.log('Build error');
+            console.log(err);
+        });
 
-    var bundle = browserifyBundle.bundle();
-    bundle = bundle.on('error', function () {
-        gutil.log("Error in Browserify. Clearing TypeScript caches.");
-        fs.writeFileSync(config.targetApp + "/___t.js", "throw 'Browserify bundle was not created!';");
-        delete cache.caches['ts'];
-        delete cache.caches['lint:ts'];
-        this.emit("end");
-    });
-
-    bundle = bundle.on('error', gutil.log.bind(gutil, 'Browserify Error'));
-    bundle = bundle.pipe(source("___t.js"));
-    bundle = bundle.pipe(buffer());
-    bundle = developmentMode ? bundle.pipe(sourcemaps.init({loadMaps: true})) : bundle;
-    bundle = !developmentMode ? bundle.pipe(uglify()) : bundle;
-    bundle = developmentMode ? bundle.pipe(sourcemaps.write()) : bundle;
-    bundle = bundle.pipe(gulp.dest(config.targetApp));
-    return bundle;
-}
- */
-
-//gulp.task('build:tsBundle', ["build:ts"], function (cb) {
-//
-//    return gulp.src(config.targetTmp + "/ts/**/*")
-//        .pipe(gulp.dest(config.targetApp + "/___systemjs/app"));
-
-
-    //cb();
-    //return buildTsBundle();
-//});
-
+});
 
 
 // ------------------------------------------------------------------
@@ -321,6 +288,7 @@ gulp.task('dist', function (callback) {
     sequence(
         "clean",
         ["build:vendor", "build:js", "build:ts", "build:css"],
+        "bundle",
         "build:html",
         callback);
 });

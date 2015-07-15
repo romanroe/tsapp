@@ -3,7 +3,5 @@ System.config({
     defaultJSExtensions: true
 });
 
-System.import("app").then(function (m) {
-    angular.bootstrap(document, ["app"]);
+System.import("app").then(function () {
 });
-
