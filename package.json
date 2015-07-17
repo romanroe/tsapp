@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "",
   "author": "",
+  "dependencies": {
+    "lodash": "latest"
+  },
   "devDependencies": {
     "del": "latest",
     "mkdirp": "latest",

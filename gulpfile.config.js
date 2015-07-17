@@ -3,7 +3,7 @@ var GulpConfig = (function () {
     function GulpConfig() {
 
         // ----------------------------------------------------------
-        // Source Paths
+        // Vendor
         // ----------------------------------------------------------
 
         this.vendor = [
@@ -22,32 +22,28 @@ var GulpConfig = (function () {
 
         this.source = 'src';
 
-        //this.typeScriptEntry = "main.js";
-
         this.scssFiles = [
             "**/*.scss",
             "**/!_*.scss"
         ];
 
         // ----------------------------------------------------------
-        // TypeScript Settings
+        // SystemJS
         // ----------------------------------------------------------
 
-        this.tsSettings = {
-            noEmitOnError: true,
-            declarationFiles: false,
-            noExternalResolve: false,
-            noImplicitAny: false,
-            module: "commonjs"
+        this.systemImportMain = "app";
+
+        this.systemJSConfig = {
+            baseURL: '',
+            defaultJSExtensions: true
         };
+
 
         // ----------------------------------------------------------
         // Output
         // ----------------------------------------------------------
 
         this.target = "target";
-
-        this.targetTmp = this.target + "/tmp";
 
         this.targetApp = this.target + "/app";
 

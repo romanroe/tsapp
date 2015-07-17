@@ -35,19 +35,8 @@ var plumber = require('gulp-plumber');
 var Config = require('./gulpfile.config');
 var config = new Config();
 
-var firstRun = true;
 var developmentMode = false;
-var abortBuild = false;
 
-//function checkAbortBuild() {
-//    if (abortBuild) {
-//        abortBuild = false;
-//        if (!firstRun) {
-//            return true;
-//        }
-//    }
-//    return false;
-//}
 
 // ------------------------------------------------------------------
 // clean
@@ -75,13 +64,13 @@ gulp.task('build:vendor', [], function () {
     });
     var streamJs = gulp.src(js)
         .pipe(debug({title: "Including vendor JS:"}))
-        .pipe(concat("___v.js"))
-        .pipe(gulp.dest(config.targetApp));
+        .pipe(concat("vendor.js"))
+        .pipe(gulp.dest(config.targetApp + "/vendor"));
 
     var streamCss = gulp.src(css)
         .pipe(debug({title: "Including vendor CSS:"}))
-        .pipe(concat("___v.css"))
-        .pipe(gulp.dest(config.targetApp));
+        .pipe(concat("vendor.css"))
+        .pipe(gulp.dest(config.targetApp + "/vendor"));
 
     var streamRest = gulp.src(rest)
         .pipe(debug({title: "Including vendor Asset:"}))
@@ -90,7 +79,17 @@ gulp.task('build:vendor', [], function () {
     var streamSystemJs = gulp.src(
         ["system-polyfills.js", "system.js"],
         {cwd: "node_modules/systemjs/dist"})
-        .pipe(gulp.dest(config.targetApp + "/___systemjs"));
+        .pipe(gulp.dest(config.targetApp + "/systemjs"));
+
+    if (developmentMode) {
+        var entryGenerated = "System.config(";
+        entryGenerated += JSON.stringify(config.systemJSConfig);
+        entryGenerated += ");\n";
+        entryGenerated += "System.import('" + config.systemImportMain + "');";
+        mkdirp(config.targetApp + "/systemjs", function () {
+            fs.writeFileSync(config.targetApp + "/systemjs/entry-generated.js", entryGenerated);
+        });
+    }
 
     return merge(streamJs, streamCss, streamRest, streamSystemJs);
 });
@@ -100,23 +99,23 @@ gulp.task('build:vendor', [], function () {
 // ------------------------------------------------------------------
 
 gulp.task('build:html', [], function () {
-    var cssStream = gulp.src([
-        '**/*.css',
-        "!___v.css"
-    ], {read: false, cwd: config.targetApp});
-
-    var s = gulp.src(config.source + "/**/*.html");
+    var s = gulp.src("**/*.html", {cwd: config.source});
     s = s.pipe(cache("html"));
     s = s.pipe(debug({title: "HTML:"}));
+    s = s.pipe(gulp.dest(config.targetApp));
     s = s.pipe(inject(series(
-        gulp.src(["___v.js", "___v.css"], {read: false, cwd: config.targetApp}),
-
         gulp.src(
-            ["___systemjs/system.js", "___systemjs/system-polyfills.js", "___systemjs/app/system.config.js"],
+            ["vendor/**/*.js", "vendor/**/*.css"],
             {read: false, cwd: config.targetApp}),
 
-        cssStream
-    ), {relative: false}));
+        gulp.src(
+            ["systemjs/system.js", "systemjs/system-polyfills.js", "systemjs/entry-generated.js"],
+            {read: false, cwd: config.targetApp}),
+
+        gulp.src(
+            ['**/*.css', "!vendor/**", "!systemjs/**"],
+            {read: false, cwd: config.targetApp})
+    ), {relative: true}));
     s = s.pipe(htmlmin({
         collapseWhitespace: true,
         removeComments: true
@@ -132,7 +131,7 @@ gulp.task('build:html', [], function () {
 // ------------------------------------------------------------------
 
 gulp.task('build:css', function () {
-    var scss = gulp.src(config.scssFiles, {cwd: config.source});
+    var scss = gulp.src(config.scssFiles, {cwd: config.source, nosort: true});
     scss = scss.pipe(cache("scss"));
     scss = developmentMode ? scss.pipe(sourcemaps.init()) : scss;
     scss = scss.pipe(sass().on('error', sass.logError));
@@ -161,9 +160,7 @@ function buildJs() {
     s = s.pipe(uglify());
     s = developmentMode ? s.pipe(sourcemaps.write()) : s;
     s = s.pipe(debug({title: "JavaScript:"}));
-    s = !developmentMode ? s.pipe(concat("___j.js")) : s;
-    //s = s.pipe(gulp.dest(config.targetApp));
-    s = s.pipe(gulp.dest(config.targetApp + "/___systemjs/app"));
+    s = s.pipe(gulp.dest(config.targetJs));
     return s;
 }
 
@@ -187,24 +184,26 @@ gulp.task('build:ts', function () {
 
     var tsResult = gulp.src('**/*.ts', {cwd: config.source});
 
-    tsResult = tsResult.pipe(plumber(function () {
-        abortBuild = true;
-    }));
+    //tsResult = tsResult.pipe(plumber(function () {
+    //    abortBuild = true;
+    //}));
 
     tsResult = developmentMode ? tsResult.pipe(cache("ts")) : tsResult;
     tsResult = developmentMode ? tsResult.pipe(sourcemaps.init()) : tsResult;
     tsResult = tsResult.pipe(debug({title: "TypeScript:"}));
     tsResult = tsResult.pipe(ts(tsProject, undefined, ts.reporter.longReporter()));
 
-    var tsResultJs = tsResult.js.pipe(ngAnnotate());
+    var tsResultJs = tsResult.js
+        .pipe(ngAnnotate())
+        .pipe(uglify());
 
     if (developmentMode) {
         tsResultJs = tsResultJs.pipe(sourcemaps.write());
     }
 
     return merge([
-        tsResult.dts.pipe(gulp.dest(config.targetTmp + "/dts")),
-        tsResultJs.pipe(gulp.dest(config.targetApp + "/___systemjs/app"))
+        tsResult.dts.pipe(gulp.dest(config.target + "/dts")),
+        tsResultJs.pipe(gulp.dest(config.targetJs + "/"))
     ]);
 });
 
@@ -213,29 +212,19 @@ gulp.task('build:ts', function () {
 // Build Bundle
 // ------------------------------------------------------------------
 
-gulp.task('bundle', [], function () {
+gulp.task('bundle', [], function (done) {
 
-    var builder = new Builder(
-        {
-        //    baseURL: 'some/folder'
-        //    transpiler: 'traceurx'
+    config.systemJSConfig.baseURL = config.targetJs + "/" + config.systemJSConfig.baseURL;
 
-
-            baseURL: 'target/app/___systemjs/app',
-            defaultJSExtensions: true
-
-
-        }
-    )
-        .buildSFX("app.js", "target/OUTFILE.js", {minify: false})
+    new Builder(config.systemJSConfig)
+        .buildSFX("app.js", config.targetApp + "/systemjs/entry-generated.js", {minify: false})
         .then(function () {
-            console.log('Build complete');
+            done();
         })
         .catch(function (err) {
             console.log('Build error');
             console.log(err);
         });
-
 });
 
 
@@ -276,6 +265,9 @@ gulp.task('watch', ["browsersync"], function () {
 });
 
 gulp.task('dev', function (callback) {
+
+    config.targetJs = config.targetApp;
+
     developmentMode = true;
     sequence(
         "clean",
@@ -285,6 +277,9 @@ gulp.task('dev', function (callback) {
 });
 
 gulp.task('dist', function (callback) {
+
+    config.targetJs = config.target + "/tmpJs";
+
     sequence(
         "clean",
         ["build:vendor", "build:js", "build:ts", "build:css"],

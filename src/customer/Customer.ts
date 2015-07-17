@@ -1,4 +1,11 @@
 
+/// <reference path="../../typings/lodash/lodash.d.ts"/>
+
+import _ = require("lodash");
+console.log("---------------------------");
+console.log(_);
+console.log("---------------------------");
+
 export class MyService {
 
     methodA(): number {

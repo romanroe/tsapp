@@ -7,7 +7,7 @@ export class MyController2 {
     //@ngInject
     constructor(myService:customer.MyService) {
         console.log("car.MyController2");
-        this.value = myService.methodA();
+        this.value = myService.methodA() + 10;
     }
 
 }
