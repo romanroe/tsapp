@@ -41,6 +41,15 @@ var config = new Config();
 var developmentMode = false;
 
 
+var onError = function (err) {
+    gutil.log(
+        gutil.colors.red.bold('[ERROR:'+ err.plugin+']:'),
+        gutil.colors.bgRed(err.message),
+        gutil.colors.red.bold('in:'+err.fileName)
+    );
+    this.emit('end');
+};
+
 // ------------------------------------------------------------------
 // clean
 // ------------------------------------------------------------------
@@ -122,6 +131,7 @@ gulp.task('build:html', [], function () {
         collapseWhitespace: true,
         conservativeCollapse: true
     }));
+    s = s.on('error', onError);
     s = s.pipe(gulp.dest(config.targetApp));
     s = s.pipe(browsersync.stream());
 
