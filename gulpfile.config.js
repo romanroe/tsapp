@@ -96,7 +96,7 @@ var GulpConfig = (function () {
         // ----------------------------------------------------------
 
         this.browserSyncOptions = {
-            injectChanges: false,
+            injectChanges: true,
             reloadDelay: 750,
             open: false,
             online: true,
@@ -109,8 +109,8 @@ var GulpConfig = (function () {
             server: {
                 baseDir: this.targetApp,
                 directory: true
-            },
-            files: this.targetApp + '/**/*'
+            }//,
+            //files: this.targetApp + '/**/*'
         };
 
     }

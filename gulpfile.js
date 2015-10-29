@@ -44,8 +44,8 @@ var developmentMode = false;
 // ------------------------------------------------------------------
 // clean
 // ------------------------------------------------------------------
-gulp.task('clean', function (cb) {
-    del([config.target], cb);
+gulp.task('clean', function () {
+    return del.sync([config.target]);
 });
 
 // ------------------------------------------------------------------
@@ -123,6 +123,7 @@ gulp.task('build:html', [], function () {
         conservativeCollapse: true
     }));
     s = s.pipe(gulp.dest(config.targetApp));
+    s = s.pipe(browsersync.stream());
 
     return s;
 });
@@ -167,6 +168,9 @@ function buildCss(useCache) {
     both = !developmentMode ? both.pipe(cssMin()) : both;
     both = !developmentMode ? both.pipe(concat("___.css")) : both;
     both = both.pipe(gulp.dest(config.targetApp));
+
+    both = both.pipe(browsersync.stream());
+
     return both;
 }
 
@@ -191,6 +195,7 @@ gulp.task('build:js', function () {
     s = developmentMode ? s.pipe(sourcemaps.write()) : s;
     //s = s.pipe(debug({title: "JavaScript:"}));
     s = s.pipe(gulp.dest(config.targetJs));
+    s = s.pipe(browsersync.stream());
     return s;
 });
 
@@ -219,6 +224,7 @@ gulp.task('build:ts', function () {
     tsResultJs = tsResultJs.pipe(debug({title: "TypeScript:"}));
     tsResultJs = tsResultJs.pipe(ngAnnotate());
     tsResultJs = tsResultJs.pipe(uglify());
+    tsResultJs = tsResultJs.pipe(browsersync.stream());
 
     if (developmentMode) {
         tsResultJs = tsResultJs.pipe(sourcemaps.write());
@@ -283,6 +289,7 @@ gulp.task('dev', function (callback) {
 
     developmentMode = true;
     sequence(
+        "clean",
         ["build:vendor", "build:copy", "build:js", "build:ts", "build:css"],
         "build:html",
         callback);
@@ -293,7 +300,7 @@ gulp.task('dist', function (callback) {
     config.targetJs = config.target + "/tmpJs";
 
     sequence(
-        //"clean",
+        "clean",
         ["build:vendor", "build:copy", "build:js", "build:ts", "build:css"],
         "bundle",
         "build:html",
