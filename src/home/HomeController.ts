@@ -5,8 +5,8 @@ class HomeController {
 
     clicks = 0;
 
-    /*@ngInject*/
     constructor(private homeService: HomeService) {
+        "ngInject";
     }
 
     click() {
@@ -16,4 +16,3 @@ class HomeController {
 }
 
 appModule.controller("HomeController", HomeController);
-

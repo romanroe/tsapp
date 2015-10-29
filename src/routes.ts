@@ -8,3 +8,4 @@ appModule.config(($stateProvider: any, $urlRouterProvider: any) => {
     $stateProvider.state("home", {url: "/home", templateUrl: "home/home.html"});
 
 });
+
