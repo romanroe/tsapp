@@ -1,17 +1,24 @@
 {
-  "name": "tsapp",
-  "version": "1.0.0",
-  "description": "",
-  "author": "",
-  "dependencies": {
-    "lodash": "latest"
-  },
+  "name": "client",
+  "version": "0.0.0",
+  "dependencies": {},
   "devDependencies": {
+
+    "matchdep": "~0.1.2",
+    "connect-livereload": "~0.2.0",
+    "grunt-google-cdn": "~0.2.0",
+    "grunt-ngmin": "~0.0.2",
+
+    "karma": "latest",
+    "casperjs": "latest",
+
+
     "del": "latest",
     "mkdirp": "latest",
     "systemjs": "0.18.4",
     "systemjs-builder": "0.12.2",
-    "gulp": "^3.8.11",
+
+    "gulp": "latest",
     "gulp-concat": "latest",
     "gulp-debug": "latest",
     "gulp-inject": "latest",
@@ -21,6 +28,8 @@
     "gulp-tslint": "latest",
     "gulp-plumber": "latest",
     "gulp-sass": "latest",
+    "gulp-css-url-rebase": "latest",
+    "gulp-minify-css": "latest",
     "gulp-util": "latest",
     "gulp-watch": "latest",
     "merge2": "latest",
@@ -32,8 +41,14 @@
     "gulp-uglify": "latest",
     "gulp-htmlmin": "latest",
     "browser-sync": "latest",
-    "gulp-cached": "latest"
+    "gulp-cached": "latest",
+    "gulp-add-src": "latest"
 
-
+  },
+  "engines": {
+    "node": ">=0.8.0"
+  },
+  "scripts": {
+    "test": "grunt test"
   }
 }

@@ -1,8 +1,9 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
-    "noEmitOnError": true,
-    "noImplicitAny": false,
+    "target": "ES5",
+    "module": "system",
+    "noEmitOnError": false,
+    "noImplicitAny": true,
     "removeComments": false,
     "preserveConstEnums": true
   },

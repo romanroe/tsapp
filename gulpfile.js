@@ -22,8 +22,11 @@ var gutil = require('gulp-util');
 var htmlmin = require('gulp-htmlmin');
 var browsersync = require('browser-sync');
 var cache = require('gulp-cached');
+var addsrc = require('gulp-add-src');
 
 var sass = require('gulp-sass');
+var cssRebase = require('gulp-css-url-rebase');
+var cssMin = require('gulp-minify-css');
 
 var inject = require('gulp-inject');
 var ts = require('gulp-typescript');
@@ -52,28 +55,23 @@ gulp.task('clean', function (cb) {
 gulp.task('build:vendor', [], function () {
     var js = [];
     var css = [];
-    var rest = [];
     config.vendor.forEach(function (elem) {
         if (elem.substr(-3) === ".js") {
             js.push(elem);
         } else if (elem.substr(-4) === ".css") {
             css.push(elem);
         } else {
-            rest.push(elem);
+            // TODO Warning 'unkown type'
         }
     });
     var streamJs = gulp.src(js)
-        .pipe(debug({title: "Including vendor JS:"}))
+        //.pipe(debug({title: "Including vendor JS:"}))
         .pipe(concat("vendor.js"))
         .pipe(gulp.dest(config.targetApp + "/vendor"));
 
     var streamCss = gulp.src(css)
-        .pipe(debug({title: "Including vendor CSS:"}))
+        //.pipe(debug({title: "Including vendor CSS:"}))
         .pipe(concat("vendor.css"))
-        .pipe(gulp.dest(config.targetApp + "/vendor"));
-
-    var streamRest = gulp.src(rest)
-        .pipe(debug({title: "Including vendor Asset:"}))
         .pipe(gulp.dest(config.targetApp + "/vendor"));
 
     var streamSystemJs = gulp.src(
@@ -82,16 +80,19 @@ gulp.task('build:vendor', [], function () {
         .pipe(gulp.dest(config.targetApp + "/systemjs"));
 
     if (developmentMode) {
-        var entryGenerated = "System.config(";
+        var entryGenerated = "";
+        entryGenerated += "if (!window.DISABLE_APP) {";
+        entryGenerated += "System.config(";
         entryGenerated += JSON.stringify(config.systemJSConfig);
         entryGenerated += ");\n";
         entryGenerated += "System.import('" + config.systemImportMain + "');";
+        entryGenerated += "}";
         mkdirp(config.targetApp + "/systemjs", function () {
             fs.writeFileSync(config.targetApp + "/systemjs/entry-generated.js", entryGenerated);
         });
     }
 
-    return merge(streamJs, streamCss, streamRest, streamSystemJs);
+    return merge(streamJs, streamCss, streamSystemJs);
 });
 
 // ------------------------------------------------------------------
@@ -99,9 +100,9 @@ gulp.task('build:vendor', [], function () {
 // ------------------------------------------------------------------
 
 gulp.task('build:html', [], function () {
-    var s = gulp.src("**/*.html", {cwd: config.source});
+    var s = gulp.src(config.htmlFiles, {cwd: "src"});
     s = s.pipe(cache("html"));
-    s = s.pipe(debug({title: "HTML:"}));
+    //s = s.pipe(debug({title: "HTML:"}));
     s = s.pipe(gulp.dest(config.targetApp));
     s = s.pipe(inject(series(
         gulp.src(
@@ -115,10 +116,11 @@ gulp.task('build:html', [], function () {
         gulp.src(
             ['**/*.css', "!vendor/**", "!systemjs/**"],
             {read: false, cwd: config.targetApp})
-    ), {relative: true}));
+    ), {relative: true, quiet: true}));
     s = s.pipe(htmlmin({
+        removeComments: true,
         collapseWhitespace: true,
-        removeComments: true
+        conservativeCollapse: true
     }));
     s = s.pipe(gulp.dest(config.targetApp));
 
@@ -127,45 +129,69 @@ gulp.task('build:html', [], function () {
 
 
 // ------------------------------------------------------------------
+// Build Copy files
+// ------------------------------------------------------------------
+
+gulp.task('build:copy', function () {
+    var copyStreams = [];
+    for (var i = 0; i < config.copyFiles.length; i++) {
+        var source = config.copyFiles[i][0];
+        var dest = config.copyFiles[i][1];
+        copyStreams.push(
+            gulp.src(source)
+                .pipe(cache("copy" + i))
+                .pipe(debug({title: "Copy:"}))
+                .pipe(gulp.dest(config.targetApp + "/" + dest)));
+    }
+    return merge(copyStreams);
+});
+
+// ------------------------------------------------------------------
 // Build CSS
 // ------------------------------------------------------------------
 
-gulp.task('build:css', function () {
-    var scss = gulp.src(config.scssFiles, {cwd: config.source, nosort: true});
-    scss = scss.pipe(cache("scss"));
+function buildCss(useCache) {
+    var scss = gulp.src(config.scssFiles, {nosort: true, cwd: "src"});
+    scss = useCache ? scss.pipe(cache("scss")) : scss;
     scss = developmentMode ? scss.pipe(sourcemaps.init()) : scss;
     scss = scss.pipe(sass().on('error', sass.logError));
     scss = developmentMode ? scss.pipe(sourcemaps.write()) : scss;
     scss = developmentMode ? scss.pipe(gulp.dest(config.targetApp)) : scss;
 
-    var css = gulp.src(config.source + "/**/*.css");
+    var css = gulp.src(config.cssFiles, {nosort: true, cwd: "src"});
     css = css.pipe(cache("css"));
 
     var both = merge(scss, css);
     both = both.pipe(debug({title: "CSS:"}));
+    both = !developmentMode ? both.pipe(cssRebase()) : both;
+    both = !developmentMode ? both.pipe(cssMin()) : both;
     both = !developmentMode ? both.pipe(concat("___.css")) : both;
     both = both.pipe(gulp.dest(config.targetApp));
     return both;
+}
+
+gulp.task('build:css', function () {
+    return buildCss(true);
+});
+
+gulp.task('build:cssNoCache', function () {
+    return buildCss(false);
 });
 
 // ------------------------------------------------------------------
 // Build JavaScript
 // ------------------------------------------------------------------
 
-function buildJs() {
-    var s = gulp.src(config.source + "/**/*.js", {nosort: true});
+gulp.task('build:js', function () {
+    var s = gulp.src(config.javaScriptFiles, {nosort: true, cwd: "src"});
     s = s.pipe(cache("js"));
     s = developmentMode ? s.pipe(sourcemaps.init()) : s;
     s = s.pipe(ngAnnotate());
     s = s.pipe(uglify());
     s = developmentMode ? s.pipe(sourcemaps.write()) : s;
-    s = s.pipe(debug({title: "JavaScript:"}));
+    //s = s.pipe(debug({title: "JavaScript:"}));
     s = s.pipe(gulp.dest(config.targetJs));
     return s;
-}
-
-gulp.task('build:js', function () {
-    return buildJs();
 });
 
 
@@ -177,25 +203,22 @@ var tsProject = ts.createProject('tsconfig.json');
 
 gulp.task('build:ts', function () {
     if (developmentMode) {
-        gulp.src(config.source + '/**/*.ts')
+        gulp.src(config.typeScriptLintFiles, {cwd: "src"})
             .pipe(cache("lint:ts"))
             .pipe(tslint()).pipe(tslint.report('prose', {emitError: false}));
     }
 
-    var tsResult = gulp.src('**/*.ts', {cwd: config.source});
+    var tsResult = gulp.src(config.typeScriptFiles, {cwd: "src"});
 
-    //tsResult = tsResult.pipe(plumber(function () {
-    //    abortBuild = true;
-    //}));
-
-    tsResult = developmentMode ? tsResult.pipe(cache("ts")) : tsResult;
+    tsResult = tsResult.pipe(addsrc(config.typeScriptDefinitions));
     tsResult = developmentMode ? tsResult.pipe(sourcemaps.init()) : tsResult;
-    tsResult = tsResult.pipe(debug({title: "TypeScript:"}));
     tsResult = tsResult.pipe(ts(tsProject, undefined, ts.reporter.longReporter()));
 
-    var tsResultJs = tsResult.js
-        .pipe(ngAnnotate())
-        .pipe(uglify());
+    var tsResultJs = tsResult.js;
+    tsResultJs = tsResultJs.pipe(cache("ts"));
+    tsResultJs = tsResultJs.pipe(debug({title: "TypeScript:"}));
+    tsResultJs = tsResultJs.pipe(ngAnnotate());
+    tsResultJs = tsResultJs.pipe(uglify());
 
     if (developmentMode) {
         tsResultJs = tsResultJs.pipe(sourcemaps.write());
@@ -217,7 +240,7 @@ gulp.task('bundle', [], function (done) {
     config.systemJSConfig.baseURL = config.targetJs + "/" + config.systemJSConfig.baseURL;
 
     new Builder(config.systemJSConfig)
-        .buildSFX("app.js", config.targetApp + "/systemjs/entry-generated.js", {minify: false})
+        .buildSFX(config.systemImportMain, config.targetApp + "/systemjs/entry-generated.js", {minify: true})
         .then(function () {
             done();
         })
@@ -233,22 +256,7 @@ gulp.task('bundle', [], function (done) {
 // ------------------------------------------------------------------
 
 gulp.task('browsersync', ["dev"], function () {
-    return browsersync({
-        open: false,
-        server: {
-            baseDir: [config.targetApp]
-        },
-        port: 9999,
-        files: [
-            config.targetApp + '/**/*.js',
-            config.targetApp + '/**/*.html',
-            config.targetApp + '/**/*.css',
-            config.targetApp + '/**/*.svg',
-            config.targetApp + '/**/*.png',
-            config.targetApp + '/**/*.jpg',
-            config.targetApp + '/**/*.gif'
-        ]
-    });
+    return browsersync(config.browserSyncOptions);
 });
 
 // ------------------------------------------------------------------
@@ -257,11 +265,16 @@ gulp.task('browsersync', ["dev"], function () {
 
 gulp.task('watch', ["browsersync"], function () {
     developmentMode = true;
-    gulp.watch("src/**/*.ts", ["build:ts"]);
+    gulp.watch(config.typeScriptFiles, {cwd: "src"}, ["build:ts"]);
+    gulp.watch(config.javaScriptFiles, {cwd: "src"}, ["build:js"]);
+    gulp.watch(config.htmlFiles, {cwd: "src"}, ["build:html"]);
+    gulp.watch(config.scssFiles, {cwd: "src"}, ["build:css"]);
+    gulp.watch(config.scssRebuildAllFiles, {cwd: "src"}, ["build:cssNoCache"]);
 
-    gulp.watch("src/**/*.js", ["build:js"]);
-    gulp.watch("src/**/*.html", ["build:html"]);
-    gulp.watch("src/**/*.scss", ["build:css"]);
+    for (var i = 0; i < config.copyFiles.length; i++) {
+        var source = config.copyFiles[i][0];
+        gulp.watch(source, {cwd: "."}, ["build:copy"]);
+    }
 });
 
 gulp.task('dev', function (callback) {
@@ -270,8 +283,7 @@ gulp.task('dev', function (callback) {
 
     developmentMode = true;
     sequence(
-        "clean",
-        ["build:vendor", "build:js", "build:ts", "build:css"],
+        ["build:vendor", "build:copy", "build:js", "build:ts", "build:css"],
         "build:html",
         callback);
 });
@@ -281,14 +293,11 @@ gulp.task('dist', function (callback) {
     config.targetJs = config.target + "/tmpJs";
 
     sequence(
-        "clean",
-        ["build:vendor", "build:js", "build:ts", "build:css"],
+        //"clean",
+        ["build:vendor", "build:copy", "build:js", "build:ts", "build:css"],
         "bundle",
         "build:html",
         callback);
 });
 
 gulp.task('default', ["dist"]);
-
-
-

@@ -1,32 +1,14 @@
 <!doctype html>
 <html>
-<head><title>TS Test</title></head>
-<!-- inject:css -->
-<!-- endinject -->
+<head>
+  <meta charset="utf-8"/>
+  <title>TypeScript Angular Demo</title>
+  <!-- inject:css -->
+  <!-- endinject -->
+</head>
 <body>
-
-<h1>TypeScript Controller</h1>
-<div ng-controller="MyController as ctrl">
-  <span>{{ctrl.value}}</span>
-  <input type="text" ng-model="firstname" ng-change="ctrl.onChxange(firstname)">
-</div>
-
-<h1>JavaScript Controller 1</h1>
-<div ng-controller="MyController2 as ctrl">
-  <h1>{{ctrl.value}}</h1>
-</div>
-
-
-<h1>JavaScript Controller 2</h1>
-<div ng-controller="MyController3 as ctrl">
-  <h1>{{ctrl.value}}</h1>
-</div>
-
+<div ui-view></div>
 <!-- inject:js -->
 <!-- endinject -->
-
 </body>
 </html>
-
-
-
